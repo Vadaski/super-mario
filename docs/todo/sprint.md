@@ -63,6 +63,9 @@
 | SMB-040 | Level editor | 2026-02-25 | F10, grid placement, test-play, base64 export/import |
 | SMB-042 | Accessibility | 2026-02-25 | Colorblind (F3), slow-mo (F4), high-contrast (F6), remap (F7) |
 | SMB-043 | Performance optimization | 2026-02-25 | Tile cache, object pool, FPS counter (F9), zero-alloc compaction |
+| SMB-050 | Original game identity | 2026-02-25 | Renamed to "Pixel Dash", animated title screen with clouds/characters/spinning coins |
+| SMB-051 | Original 8-bit music | 2026-02-25 | 4 original compositions: overworld (G major), underground (E minor), castle (D minor), star (D major) |
+| SMB-052 | Visual signature effects | 2026-02-25 | CRT default on, ghost silhouette+trail, pipe transitions, coin sparkles |
 
 ## Backlog
 

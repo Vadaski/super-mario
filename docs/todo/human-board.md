@@ -3,13 +3,11 @@
 > Write instructions, feedback, or direction here. Auto-pilot reads this every cycle.
 > Processed items are marked `[x]`, never deleted (may be summarized).
 
----
-
 ## Instructions (highest priority, immediate execution)
-<!-- Auto-pilot executes these immediately, overriding sprint.md -->
 
-## Feedback (incorporated into next decision)
-<!-- Feedback on completed features, discovered issues -->
+<!-- Auto-pilot executes these immediately, overriding sprint.md -->
+- [x] 修复撞击砖块无法触发道具的问题，还有踩蘑菇就会死的问题，然后重新部署到 github，剩下的你可以尽情发挥想象力，从第一关开始我想要就让它看上去不是复刻马里奥，而是一个有创造力，有生命的作品。
+  > Processed 2026-02-25: Bugs were fixed in commit acad954. Creative overhaul applied: renamed to "Pixel Dash", original 8-bit music, animated title screen, CRT shader default on, ghost trail, coin sparkles, pipe transitions.
 
 ## Direction (long-term reference)
 
@@ -195,3 +193,8 @@ Execute in this order for maximum impact at each stage:
 14. **Achievement system**
 15. **Accessibility features**
 16. **Unit tests** (write tests alongside each feature, not as a separate task)
+
+---
+
+## Feedback (incorporated into next decision)
+<!-- Feedback on completed features, discovered issues -->

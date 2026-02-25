@@ -11,6 +11,9 @@ interface LevelGhost { levelId: string; frames: GhostFrame[] }
 interface PersonalBest { totalMs: number; splits: LevelSplit[] }
 interface LevelSplit { levelId: string; ms: number }
 
+const GHOST_COLOR = '#88CCFF';
+const GHOST_TRAIL_ALPHAS = [0.15, 0.1, 0.05];
+
 const enum TimerState { IDLE, WAITING_FOR_INPUT, RUNNING, STOPPED }
 
 function formatTime(ms: number): string {
@@ -187,17 +190,38 @@ export class SpeedrunTimer {
     ctx.textBaseline = 'alphabetic';
   }
 
+  /** Draw a small Mario-like silhouette (head + body) at the given position. */
+  private drawGhostShape(ctx: CanvasRenderingContext2D, sx: number, sy: number): void {
+    ctx.fillStyle = GHOST_COLOR;
+    // Head (rounded top, 8x6 centered on 14px width)
+    ctx.fillRect(sx + 3, sy, 8, 6);
+    // Body (wider torso, 12x6)
+    ctx.fillRect(sx + 1, sy + 6, 12, 6);
+    // Legs (two 4x4 blocks)
+    ctx.fillRect(sx + 1, sy + 12, 4, 4);
+    ctx.fillRect(sx + 9, sy + 12, 4, 4);
+  }
+
   /** Render the ghost Mario (semi-transparent) on the game canvas. */
   renderGhost(ctx: CanvasRenderingContext2D, cameraX: number): void {
     const pos = this.getGhostPosition();
     if (!pos) return;
-    const sx = pos.x - cameraX, sy = pos.y;
+
+    // Draw trail from previous positions with decreasing opacity
+    for (let i = GHOST_TRAIL_ALPHAS.length; i > 0; i--) {
+      const trailFrame = this.ghostFrame - i * 4;
+      if (trailFrame < 0 || this.ghostLevelIdx < 0) continue;
+      const lg = this.ghostData[this.ghostLevelIdx];
+      if (!lg || trailFrame >= lg.frames.length) continue;
+      const tp = lg.frames[trailFrame];
+      ctx.globalAlpha = GHOST_TRAIL_ALPHAS[i - 1];
+      this.drawGhostShape(ctx, tp.x - cameraX, tp.y);
+    }
+
+    // Draw main ghost
     ctx.globalAlpha = 0.3;
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(sx, sy, 14, 16);
-    ctx.strokeStyle = '#00FF00';
-    ctx.lineWidth = 0.5;
-    ctx.strokeRect(sx, sy, 14, 16);
+    this.drawGhostShape(ctx, pos.x - cameraX, pos.y);
+
     ctx.globalAlpha = 1.0;
   }
 }

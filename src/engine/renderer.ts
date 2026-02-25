@@ -58,9 +58,33 @@ export class GameRenderer {
       e.draw(this.ctx, spriteSheet, camera);
     }
 
+    // Coin sparkles on question blocks
+    this.drawCoinSparkles(camera, level, animFrames);
+
     // Mario
     if (!mario.dead || mario.dying) {
       mario.draw(this.ctx, spriteSheet, camera);
+    }
+  }
+
+  private static readonly SPARKLE_CORNERS = [[2, 2], [10, 2], [2, 10], [10, 10]];
+
+  private drawCoinSparkles(camera: Camera, level: Level, anim: AnimationFrames): void {
+    const startCol = Math.floor(camera.x / TILE);
+    const endCol = Math.ceil((camera.x + SCREEN_WIDTH) / TILE);
+    const corners = GameRenderer.SPARKLE_CORNERS;
+    for (let col = startCol; col <= endCol; col++) {
+      for (let row = 0; row < level.data.height; row++) {
+        if (level.getTile(col, row) !== TileType.QUESTION) continue;
+        // Each block sparkles at different times based on position
+        const phase = (anim.globalFrame + col * 17 + row * 31) % 120;
+        if (phase >= 8) continue; // sparkle visible for 8 frames every 120
+        const ci = Math.floor(phase / 2) % 4;
+        const sx = camera.screenX(col * TILE) + corners[ci][0];
+        const sy = camera.screenY(row * TILE) + level.getBumpOffset(col, row) + corners[ci][1];
+        this.ctx.fillStyle = '#FCFCFC';
+        this.ctx.fillRect(sx, sy, 2, 2);
+      }
     }
   }
 

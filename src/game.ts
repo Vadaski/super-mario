@@ -499,10 +499,15 @@ export class Game {
     }
     audio.stopMusic();
     this.currentLevelId = nextId;
-    this.transition.startFadeOut(() => {
+    const onDone = () => {
       this.state = GameState.LEVEL_INTRO; this.stateTimer = 0;
       this.transition.startFadeIn();
-    });
+    };
+    if (this.levelConfig.music === 'underground') {
+      this.transition.startPipeEntry(this.mario.x, this.mario.y, 'up', onDone);
+    } else {
+      this.transition.startFadeOut(onDone);
+    }
   }
 
   private countEnemies(): number {
@@ -732,15 +737,15 @@ export class Game {
         if (this.showToadMessage) {
           this.renderer.drawToadMessage(
             this.camera,
-            'THANK YOU MARIO!',
+            'THANK YOU HERO!',
             94 * TILE + 8,
             10 * TILE,
           );
           this.ctx.fillStyle = '#FCFCFC';
           this.ctx.font = '8px monospace';
           this.ctx.textAlign = 'center';
-          this.ctx.fillText('BUT OUR PRINCESS IS', this.camera.screenX(94 * TILE + 24), this.camera.screenY(8 * TILE));
-          this.ctx.fillText('IN ANOTHER CASTLE!', this.camera.screenX(94 * TILE + 24), this.camera.screenY(8 * TILE + 12));
+          this.ctx.fillText('GREAT JOB!', this.camera.screenX(94 * TILE + 24), this.camera.screenY(8 * TILE));
+          this.ctx.fillText('BUT THE QUEST CONTINUES!', this.camera.screenX(94 * TILE + 24), this.camera.screenY(8 * TILE + 12));
           this.ctx.textAlign = 'left';
         }
         // High-contrast outlines for Mario and entities

@@ -280,9 +280,11 @@ export class CRTShader {
 
   private loadState(): boolean {
     try {
-      return localStorage.getItem(STORAGE_KEY) === 'true';
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved === null) return true; // default on for new players
+      return saved === 'true';
     } catch {
-      return false;
+      return true;
     }
   }
 
