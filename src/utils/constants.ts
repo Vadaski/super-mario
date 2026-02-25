@@ -92,6 +92,8 @@ export const enum TileType {
   FLAGPOLE_TOP = 12,
   CASTLE = 13,
   BRIDGE = 14,
+  LAVA = 15,
+  CASTLE_STONE = 16,
 }
 
 // Entity types
@@ -110,6 +112,11 @@ export const enum EntityType {
   SCORE_POPUP,
   FLAG,
   PIRANHA,
+  PLATFORM,
+  FIRE_BAR,
+  BOWSER,
+  BOWSER_FIRE,
+  AXE,
 }
 
 // Mario states

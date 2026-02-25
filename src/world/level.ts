@@ -23,6 +23,9 @@ const enum TileType {
   FLAGPOLE       = 11,
   FLAGPOLE_TOP   = 12,
   CASTLE         = 13,
+  BRIDGE         = 14,
+  LAVA           = 15,
+  CASTLE_STONE   = 16,
 }
 
 export class Level {
@@ -126,6 +129,8 @@ export class Level {
       case TileType.PIPE_BL:
       case TileType.PIPE_BR:
       case TileType.CASTLE:
+      case TileType.BRIDGE:
+      case TileType.CASTLE_STONE:
         return true;
 
       case TileType.HIDDEN:

@@ -78,12 +78,27 @@ export class Koopa implements Entity {
   width = 16; height = 24;
   alive = true; active = false;
   timer = 0; frame = 0; facingRight = false; onGround = false;
+  red = false;
+  winged = false;
+  wingBounceY = 0;
+  wingBaseY = 0;
 
   constructor(x: number, y: number) {
     this.x = x; this.y = y - 8; this.vx = -KOOPA_SPEED;
+    this.wingBaseY = this.y;
   }
 
   update(level: Level): void {
+    // Winged Koopa: bounce in a sine wave pattern
+    if (this.winged) {
+      this.wingBounceY++;
+      this.y = this.wingBaseY + Math.sin(this.wingBounceY * Math.PI * 2 / 120) * 32;
+      this.timer++;
+      this.frame = Math.floor(this.timer / 8) % 2;
+      // Winged Koopas don't walk, they bounce in place
+      return;
+    }
+
     this.vy += GRAVITY;
     if (this.vy > MAX_FALL_SPEED) this.vy = MAX_FALL_SPEED;
 
@@ -93,6 +108,16 @@ export class Koopa implements Entity {
     this.onGround = result.bottom;
 
     if (result.left || result.right) this.vx = -this.vx;
+
+    // Red Koopa: check for ledge ahead and reverse if about to walk off
+    if (this.red && this.onGround) {
+      const checkCol = Math.floor((this.vx < 0 ? this.x - 1 : this.x + this.width) / TILE);
+      const feetRow = Math.floor((this.y + this.height + 1) / TILE);
+      if (!level.isSolid(checkCol, feetRow)) {
+        this.vx = -this.vx;
+      }
+    }
+
     this.facingRight = this.vx > 0;
     if (this.y > SCREEN_HEIGHT + 32) this.alive = false;
 
@@ -100,9 +125,47 @@ export class Koopa implements Entity {
     this.frame = Math.floor(this.timer / 8) % 2;
   }
 
+  /** Stomp a winged Koopa: lose wings, become regular Koopa */
+  removeWings(): void {
+    this.winged = false;
+  }
+
   draw(ctx: CanvasRenderingContext2D, sprites: SpriteSheet, camera: Camera): void {
     const sx = camera.screenX(this.x); const sy = camera.screenY(this.y);
-    sprites.draw(ctx, `koopa-walk-${this.frame + 1}`, sx, sy, this.facingRight);
+
+    // Draw Koopa body
+    if (this.red) {
+      // Red Koopa: tint the sprite by drawing with hue shift
+      ctx.save();
+      ctx.filter = 'hue-rotate(-60deg) saturate(1.5)';
+      sprites.draw(ctx, `koopa-walk-${this.frame + 1}`, sx, sy, this.facingRight);
+      ctx.filter = 'none';
+      ctx.restore();
+    } else {
+      sprites.draw(ctx, `koopa-walk-${this.frame + 1}`, sx, sy, this.facingRight);
+    }
+
+    // Draw wings when winged
+    if (this.winged) {
+      const wingX1 = this.facingRight ? sx - 4 : sx + 14;
+      const wingX2 = this.facingRight ? sx + 14 : sx - 4;
+      const wingFlap = Math.sin(this.wingBounceY * 0.3) > 0 ? -3 : 0;
+      ctx.fillStyle = '#FCFCFC';
+      // Left wing
+      ctx.beginPath();
+      ctx.moveTo(wingX1, sy + 4 + wingFlap);
+      ctx.lineTo(wingX1 - 4, sy + wingFlap);
+      ctx.lineTo(wingX1, sy + 8 + wingFlap);
+      ctx.closePath();
+      ctx.fill();
+      // Right wing
+      ctx.beginPath();
+      ctx.moveTo(wingX2, sy + 4 + wingFlap);
+      ctx.lineTo(wingX2 + 4, sy + wingFlap);
+      ctx.lineTo(wingX2, sy + 8 + wingFlap);
+      ctx.closePath();
+      ctx.fill();
+    }
   }
 }
 

@@ -13,6 +13,7 @@ import type { Firework } from './win-sequence.js';
 export interface AnimationFrames {
   questionAnimFrame: number;
   coinAnimFrame: number;
+  globalFrame: number;
 }
 
 export class GameRenderer {
@@ -33,15 +34,16 @@ export class GameRenderer {
     animFrames: AnimationFrames,
     scenery: SceneryItem[],
     timer: number,
+    bgColor: string = COLORS.SKY,
   ): void {
-    // Sky background
-    this.gc.clear(COLORS.SKY);
+    // Background color (sky for overworld, black for underground)
+    this.gc.clear(bgColor);
 
     // Scenery (behind tiles)
     this.renderScenery(camera, scenery);
 
     // Tiles
-    this.renderTiles(camera, level, spriteSheet, animFrames);
+    this.renderTiles(camera, level, spriteSheet, animFrames, bgColor);
 
     // Entities
     for (const e of entities) {
@@ -61,7 +63,9 @@ export class GameRenderer {
     level: Level,
     spriteSheet: SpriteSheet,
     animFrames: AnimationFrames,
+    bgColor: string = COLORS.SKY,
   ): void {
+    const underground = bgColor === '#000000';
     const startCol = Math.floor(camera.x / TILE);
     const endCol = Math.ceil((camera.x + SCREEN_WIDTH) / TILE);
 
@@ -76,10 +80,10 @@ export class GameRenderer {
 
         switch (tile) {
           case TileType.GROUND:
-            spriteSheet.draw(this.ctx, row === 13 ? 'ground-top' : 'ground', sx, sy);
+            spriteSheet.draw(this.ctx, underground ? (row === 13 ? 'ground-top-ug' : 'ground-ug') : (row === 13 ? 'ground-top' : 'ground'), sx, sy);
             break;
           case TileType.BRICK:
-            spriteSheet.draw(this.ctx, 'brick', sx, sy);
+            spriteSheet.draw(this.ctx, underground ? 'brick-ug' : 'brick', sx, sy);
             break;
           case TileType.QUESTION:
             spriteSheet.draw(this.ctx, `question-${animFrames.questionAnimFrame + 1}`, sx, sy);
@@ -116,6 +120,15 @@ export class GameRenderer {
           case TileType.CASTLE:
             spriteSheet.draw(this.ctx, 'block', sx, sy); // Use block as castle tile
             break;
+          case TileType.BRIDGE:
+            this.drawBridge(sx, sy);
+            break;
+          case TileType.LAVA:
+            this.drawLava(sx, sy, animFrames.globalFrame, col);
+            break;
+          case TileType.CASTLE_STONE:
+            this.drawCastleStone(sx, sy, row, col);
+            break;
         }
       }
     }
@@ -147,45 +160,67 @@ export class GameRenderer {
     }
   }
 
-  private drawHill(x: number, y: number, width: number, height: number): void {
+  private drawHill(x: number, y: number, w: number, h: number): void {
+    const cx = x + w / 2;
     this.ctx.fillStyle = COLORS.HILL_GREEN;
-    // Simple triangle-ish hill
-    const cx = x + width / 2;
-    this.ctx.beginPath();
-    this.ctx.moveTo(x, y + height);
-    this.ctx.lineTo(cx, y);
-    this.ctx.lineTo(x + width, y + height);
-    this.ctx.closePath();
-    this.ctx.fill();
-    // Highlight
+    this.ctx.beginPath(); this.ctx.moveTo(x, y + h); this.ctx.lineTo(cx, y); this.ctx.lineTo(x + w, y + h); this.ctx.closePath(); this.ctx.fill();
     this.ctx.fillStyle = COLORS.HILL_LIGHT;
-    this.ctx.beginPath();
-    this.ctx.moveTo(cx - 2, y + 4);
-    this.ctx.lineTo(cx + 2, y + 4);
-    this.ctx.lineTo(cx, y);
-    this.ctx.closePath();
-    this.ctx.fill();
+    this.ctx.beginPath(); this.ctx.moveTo(cx - 2, y + 4); this.ctx.lineTo(cx + 2, y + 4); this.ctx.lineTo(cx, y); this.ctx.closePath(); this.ctx.fill();
   }
 
-  private drawBush(x: number, y: number, width: number): void {
+  private drawBush(x: number, y: number, w: number): void {
     this.ctx.fillStyle = COLORS.BUSH_GREEN;
-    const h = 16;
-    // Three circles for bush
-    const r = h / 2;
-    for (let i = 0; i < width; i += r) {
-      this.ctx.beginPath();
-      this.ctx.arc(x + r + i, y + r, r, 0, Math.PI * 2);
-      this.ctx.fill();
-    }
+    const r = 8;
+    for (let i = 0; i < w; i += r) { this.ctx.beginPath(); this.ctx.arc(x + r + i, y + r, r, 0, Math.PI * 2); this.ctx.fill(); }
   }
 
   private drawCloud(x: number, y: number): void {
     this.ctx.fillStyle = COLORS.CLOUD_WHITE;
-    this.ctx.beginPath();
-    this.ctx.arc(x + 12, y + 8, 8, 0, Math.PI * 2);
-    this.ctx.arc(x + 24, y + 4, 10, 0, Math.PI * 2);
-    this.ctx.arc(x + 36, y + 8, 8, 0, Math.PI * 2);
-    this.ctx.fill();
+    this.ctx.beginPath(); this.ctx.arc(x + 12, y + 8, 8, 0, Math.PI * 2); this.ctx.arc(x + 24, y + 4, 10, 0, Math.PI * 2); this.ctx.arc(x + 36, y + 8, 8, 0, Math.PI * 2); this.ctx.fill();
+  }
+
+  private drawBridge(x: number, y: number): void {
+    // Gray bridge block
+    this.ctx.fillStyle = '#A4A4A4';
+    this.ctx.fillRect(x, y, TILE, TILE);
+    this.ctx.fillStyle = '#585858';
+    this.ctx.fillRect(x, y, TILE, 2);
+    this.ctx.fillRect(x, y + TILE - 2, TILE, 2);
+    // Chain links on sides
+    this.ctx.fillRect(x, y + 4, 2, 4);
+    this.ctx.fillRect(x + TILE - 2, y + 4, 2, 4);
+  }
+
+  private drawLava(x: number, y: number, globalFrame: number, col: number): void {
+    // Animated lava shimmer
+    const phase = (globalFrame + col * 4) % 16;
+    this.ctx.fillStyle = phase < 8 ? '#D82800' : '#FC7C00';
+    this.ctx.fillRect(x, y, TILE, TILE);
+    // Highlights
+    this.ctx.fillStyle = phase < 8 ? '#FC7C00' : '#FCA044';
+    const waveOffset = Math.sin((globalFrame + col * 3) * 0.15) * 3;
+    this.ctx.fillRect(x + 2, y + 2 + waveOffset, 4, 3);
+    this.ctx.fillRect(x + 10, y + 6 - waveOffset, 4, 3);
+  }
+
+  private drawCastleStone(x: number, y: number, row: number, col: number): void {
+    // Gray stone brick pattern
+    this.ctx.fillStyle = '#585858';
+    this.ctx.fillRect(x, y, TILE, TILE);
+    // Lighter mortar lines
+    this.ctx.fillStyle = '#A4A4A4';
+    const offset = (row % 2 === 0) ? 0 : 8;
+    this.ctx.fillRect(x + offset, y, 1, TILE);
+    this.ctx.fillRect(x + offset + 8, y, 1, TILE);
+    this.ctx.fillRect(x, y + 7, TILE, 1);
+  }
+
+  drawToadMessage(camera: Camera, text: string, toadX: number, toadY: number): void {
+    const sx = camera.screenX(toadX), sy = camera.screenY(toadY);
+    this.ctx.fillStyle = '#D82800'; this.ctx.fillRect(sx + 2, sy, 12, 8);
+    this.ctx.fillStyle = '#FCFCFC'; this.ctx.fillRect(sx + 5, sy + 1, 3, 5); this.ctx.fillRect(sx + 9, sy + 1, 3, 5);
+    this.ctx.fillRect(sx + 4, sy + 8, 8, 8);
+    this.ctx.font = '8px monospace'; this.ctx.textAlign = 'center'; this.ctx.fillText(text, sx + 8, sy - 8); this.ctx.textAlign = 'left';
   }
 
   drawPoleFlag(camera: Camera, flagX: number, flagY: number): void {

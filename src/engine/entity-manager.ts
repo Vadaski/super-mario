@@ -98,10 +98,17 @@ export class EntityManager {
       koopa.alive = false; mario.addScore(SCORES.KOOPA_STOMP); audio.kick(); return;
     }
     if (isStomping(boxOf(mario), boxOf(koopa))) {
-      koopa.alive = false;
-      out.push(new Shell(koopa.x, koopa.y + 8));
-      mario.bounce(); audio.stomp();
-      this.awardStompScore(mario, koopa.x, koopa.y, out);
+      if (koopa.winged) {
+        // Stomp a Paratroopa: loses wings, becomes regular Koopa
+        koopa.removeWings();
+        mario.bounce(); audio.stomp();
+        this.awardStompScore(mario, koopa.x, koopa.y, out);
+      } else {
+        koopa.alive = false;
+        out.push(new Shell(koopa.x, koopa.y + 8));
+        mario.bounce(); audio.stomp();
+        this.awardStompScore(mario, koopa.x, koopa.y, out);
+      }
     } else {
       const damaged = mario.takeDamage();
       if (damaged && !mario.dead) audio.powerDown();

@@ -2047,6 +2047,17 @@ export class SpriteSheet {
     this.register('ground-top', groundTop(), GROUND_COLORS, 16);
     this.register('ground', ground(), GROUND_COLORS, 16);
     this.register('brick', brick(), BRICK_COLORS, 16);
+
+    // Underground tile variants (blue-gray palette)
+    const UG_GROUND_COLORS: Record<string, string> = {
+      '.': T, 'D': '#585858', 'L': '#A4A4A4', 'b': C.B,
+    };
+    const UG_BRICK_COLORS: Record<string, string> = {
+      '.': T, 'D': '#585898', 'L': '#7878B8', 'b': C.B,
+    };
+    this.register('ground-top-ug', groundTop(), UG_GROUND_COLORS, 16);
+    this.register('ground-ug', ground(), UG_GROUND_COLORS, 16);
+    this.register('brick-ug', brick(), UG_BRICK_COLORS, 16);
     this.register('question-1', question1(), Q_COLORS, 16);
     this.register('question-2', question2(), Q_COLORS, 16);
     this.register('question-3', question3(), Q_COLORS, 16);

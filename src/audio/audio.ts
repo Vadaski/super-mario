@@ -695,6 +695,70 @@ export class AudioEngine {
   }
 
   // -----------------------------------------------------------------------
+  // Castle Theme
+  // -----------------------------------------------------------------------
+
+  private static readonly castleMelody: [string, number][] = [
+    // Dark, ominous 4-bar melody using low frequencies
+    ['A3', 0.5], ['_', 0.25], ['A3', 0.25], ['A3', 0.5], ['_', 0.5],
+    ['G#3', 0.5], ['_', 0.25], ['G#3', 0.25], ['G#3', 0.5], ['_', 0.5],
+    ['G3', 0.5], ['_', 0.25], ['G3', 0.25], ['G3', 0.5], ['_', 0.5],
+    ['G#3', 0.5], ['_', 0.25], ['A3', 0.25], ['A#3', 0.5], ['_', 0.5],
+    // Bar 3-4
+    ['A3', 0.25], ['C4', 0.25], ['A3', 0.25], ['_', 0.25],
+    ['G#3', 0.25], ['B3', 0.25], ['G#3', 0.25], ['_', 0.25],
+    ['G3', 0.25], ['A#3', 0.25], ['G3', 0.25], ['_', 0.25],
+    ['F#3', 0.25], ['A3', 0.25], ['F#3', 0.25], ['_', 0.25],
+  ];
+
+  private static readonly castleBass: [string, number][] = [
+    ['A1', 0.5], ['A2', 0.5], ['A1', 0.5], ['A2', 0.5],
+    ['G#1', 0.5], ['G#2', 0.5], ['G#1', 0.5], ['G#2', 0.5],
+    ['G1', 0.5], ['G2', 0.5], ['G1', 0.5], ['G2', 0.5],
+    ['G#1', 0.5], ['G#2', 0.5], ['A1', 0.5], ['A#2', 0.5],
+    ['A1', 0.5], ['A2', 0.5], ['A1', 0.5], ['A2', 0.5],
+    ['G#1', 0.5], ['G#2', 0.5], ['G#1', 0.5], ['G#2', 0.5],
+    ['G1', 0.5], ['G2', 0.5], ['G1', 0.5], ['G2', 0.5],
+    ['F#1', 0.5], ['F#2', 0.5], ['F#1', 0.5], ['F#2', 0.5],
+  ];
+
+  playCastleTheme(): void {
+    this.stopAllMusic();
+    this.musicPlaying = true;
+
+    const play = () => {
+      if (!this.musicPlaying || !this.ctx || !this.musicGain) return;
+      const t = this.ctx.currentTime + 0.05;
+      const bpm = 140;
+
+      const melResult = this.scheduleMelody(
+        AudioEngine.castleMelody, bpm, t, this.musicGain, 'square', 0.14,
+      );
+      this.activeMusicOscillators.push(...melResult.oscillators);
+
+      const bassResult = this.scheduleMelody(
+        AudioEngine.castleBass, bpm, t, this.musicGain, 'triangle', 0.16,
+      );
+      this.activeMusicOscillators.push(...bassResult.oscillators);
+
+      const loopDuration = Math.max(melResult.totalDuration, bassResult.totalDuration);
+      this.loopHandle = window.setTimeout(() => {
+        if (this.musicPlaying) play();
+      }, loopDuration * 1000) as unknown as number;
+      this.musicTimeouts.push(this.loopHandle!);
+    };
+
+    play();
+  }
+
+  bowserFall(): void {
+    const ctx = this.ensureCtx();
+    const t = ctx.currentTime;
+    this.tone(200, 'square', t, 0.3, this.sfxGain!, 0.25, 50);
+    this.noise(t + 0.1, 0.3, this.sfxGain!, 0.15);
+  }
+
+  // -----------------------------------------------------------------------
   // Music control
   // -----------------------------------------------------------------------
 

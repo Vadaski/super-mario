@@ -20,9 +20,21 @@ export interface LevelData {
 }
 
 export interface EntitySpawn {
-  type: 'goomba' | 'koopa' | 'piranha';
+  type: 'goomba' | 'koopa' | 'piranha' | 'koopa-red' | 'paratroopa' | 'platform-h' | 'platform-v' | 'fire-bar' | 'bowser' | 'axe';
   x: number;
   y: number;
+  /** For platforms: min bound of movement (pixels) */
+  minPos?: number;
+  /** For platforms: max bound of movement (pixels) */
+  maxPos?: number;
+  /** For platforms: width in pixels (default 48) */
+  platformWidth?: number;
+  /** For fire bars: rotation speed */
+  speed?: number;
+  /** For Bowser: bridge start X */
+  bridgeStart?: number;
+  /** For Bowser: bridge end X */
+  bridgeEnd?: number;
 }
 
 export interface SceneryItem {
