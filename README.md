@@ -3,6 +3,12 @@
 > A complete Super Mario Bros. recreation built entirely in the browser with TypeScript + Canvas 2D.
 > **Zero runtime dependencies. 37 modules. 10,000 lines. 41KB gzipped.**
 
+## [Play Now](https://vadaski.github.io/super-mario/)
+
+<p align="center">
+  <a href="https://vadaski.github.io/super-mario/"><img src="https://img.shields.io/badge/Play_Now-vadaski.github.io/super--mario-E52521?style=for-the-badge&logo=nintendo&logoColor=white" alt="Play Now" /></a>
+</p>
+
 <p align="center">
   <img src="https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Vite-6.0-646CFF?logo=vite" alt="Vite" />
@@ -76,7 +82,7 @@ This isn't a toy demo or a sprite-swapping tutorial project. It's a **feature-co
 ## Quick Start
 
 ```bash
-git clone https://github.com/user/super-mario.git
+git clone https://github.com/Vadaski/super-mario.git
 cd super-mario
 npm install
 npm run dev
