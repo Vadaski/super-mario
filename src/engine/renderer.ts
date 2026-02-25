@@ -9,6 +9,7 @@ import type { Entity } from '../entities/entities.js';
 import type { SpriteSheet } from '../sprites/sprites.js';
 import type { SceneryItem } from '../world/levels/world-1-1.js';
 import type { Firework } from './win-sequence.js';
+import { TileCache } from './tile-cache.js';
 
 export interface AnimationFrames {
   questionAnimFrame: number;
@@ -19,10 +20,15 @@ export interface AnimationFrames {
 export class GameRenderer {
   private gc: GameCanvas;
   private ctx: CanvasRenderingContext2D;
+  private tileCache = new TileCache();
 
   constructor(gc: GameCanvas) {
     this.gc = gc;
     this.ctx = gc.ctx;
+  }
+
+  getTileCache(): TileCache {
+    return this.tileCache;
   }
 
   renderGame(
@@ -43,7 +49,7 @@ export class GameRenderer {
     this.renderScenery(camera, scenery);
 
     // Tiles
-    this.renderTiles(camera, level, spriteSheet, animFrames, bgColor);
+    this.tileCache.renderTiles(this.ctx, camera, level, spriteSheet, animFrames, bgColor);
 
     // Entities
     for (const e of entities) {

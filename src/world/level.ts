@@ -32,6 +32,7 @@ export class Level {
   data: LevelData;
   blockContents: Map<string, string>;
   bumpedBlocks: Map<string, number>;
+  onTileChange: ((col: number, row: number) => void) | null = null;
 
   constructor(data: LevelData, contents: BlockContent[]) {
     this.data = data;
@@ -62,6 +63,7 @@ export class Level {
       return;
     }
     this.data.tiles[row][col] = type;
+    if (this.onTileChange) this.onTileChange(col, row);
   }
 
   // ---------------------------------------------------------------------------

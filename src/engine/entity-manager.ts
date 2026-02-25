@@ -266,7 +266,10 @@ export class EntityManager {
     const newEntities: Entity[] = [];
     if (!mario.isFire || fireballCooldown > 0) return { cooldown: fireballCooldown, newEntities };
     if (inputRef.run && inputRef.justPressed('KeyZ') || inputRef.justPressed('ShiftLeft') || inputRef.justPressed('ShiftRight')) {
-      const fbCount = entities.filter(e => e.type === EntityType.FIREBALL && e.alive).length;
+      let fbCount = 0;
+      for (let i = 0; i < entities.length; i++) {
+        if (entities[i].type === EntityType.FIREBALL && entities[i].alive) fbCount++;
+      }
       if (fbCount < 2) {
         const fbX = mario.facingRight ? mario.x + mario.width : mario.x - 8;
         newEntities.push(new Fireball(fbX, mario.y + 8, mario.facingRight));

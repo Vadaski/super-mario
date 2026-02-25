@@ -30,6 +30,8 @@ import { AchievementManager } from './engine/achievements.js';
 import { TouchControls } from './input/touch-controls.js';
 import { AccessibilityManager } from './engine/accessibility.js';
 import { LevelEditor } from './engine/level-editor.js';
+import { compactEntities } from './engine/object-pool.js';
+import { FpsCounter } from './engine/fps-counter.js';
 
 export class Game {
   private gc: GameCanvas;
@@ -74,6 +76,7 @@ export class Game {
   private touchControls: TouchControls;
   private accessibility = new AccessibilityManager();
   private editor: LevelEditor | null = null;
+  private fpsCounter = new FpsCounter();
 
   constructor() {
     this.gc = new GameCanvas();
@@ -84,6 +87,7 @@ export class Game {
     this.mario = new Mario(data.startX, data.startY);
     this.level = new Level(data, this.levelConfig.contents);
     this.renderer = new GameRenderer(this.gc);
+    this.level.onTileChange = (col, row) => this.renderer.getTileCache().invalidateTile(col, row);
     this.entityManager = new EntityManager();
     this.touchControls = new TouchControls();
     input.setTouchControls(this.touchControls);
@@ -142,6 +146,7 @@ export class Game {
     }
     if (input.justPressed('F1')) this.speedrun.toggle();
     if (input.justPressed('F2')) this.crtShader.toggle();
+    if (input.justPressed('F9')) this.fpsCounter.toggle();
     if (this.state === GameState.PLAYING && (input.justPressed('KeyP') || input.justPressed('Escape') || input.gamepad.startPressed)) {
       this.paused = !this.paused;
       audio.pause();
@@ -265,7 +270,7 @@ export class Game {
     const killed = enemiesBefore - this.countEnemies();
     for (let k = 0; k < killed; k++) this.achievements.onEnemyKill();
     if (!wasFireState && this.mario.isFire) this.achievements.onFireFlower();
-    this.entities = this.entities.filter(e => e.alive);
+    this.entities.length = compactEntities(this.entities);
 
     this.level.updateBumps();
     this.timerFrame++;
@@ -553,6 +558,8 @@ export class Game {
     this.levelConfig = getLevelConfig(this.currentLevelId);
     const levelData = this.levelConfig.data;
     this.level = new Level(levelData, this.levelConfig.contents);
+    this.level.onTileChange = (col, row) => this.renderer.getTileCache().invalidateTile(col, row);
+    this.renderer.getTileCache().invalidateAll();
     for (const tc of data.levelState.tileChanges) this.level.setTile(tc.col, tc.row, tc.value);
     this.level.blockContents.clear();
     for (const bc of data.levelState.remainingBlockContents) this.level.blockContents.set(bc.key, bc.value);
@@ -634,6 +641,8 @@ export class Game {
     this.levelConfig = getLevelConfig(levelId);
     const d = this.levelConfig.data;
     this.level = new Level(d, this.levelConfig.contents);
+    this.level.onTileChange = (col, row) => this.renderer.getTileCache().invalidateTile(col, row);
+    this.renderer.getTileCache().invalidateAll();
     this.camera.reset(d.width);
     this.mario.reset(d.startX, d.startY);
     this.entities = []; this.timer = LEVEL_TIME;
@@ -684,6 +693,7 @@ export class Game {
   }
 
   private render(): void {
+    this.fpsCounter.beginFrame();
     switch (this.state) {
       case GameState.TITLE:
         drawTitleScreen(this.ctx);
@@ -746,6 +756,7 @@ export class Game {
     this.accessibility.renderRemapOverlay(this.ctx, (code: string) => input.justPressed(code));
     this.accessibility.renderSettingsMenu(this.ctx, (code: string) => input.justPressed(code));
 
+    this.fpsCounter.render(this.ctx);
     this.crtShader.apply(this.ctx, this.gc.canvas);
   }
 
