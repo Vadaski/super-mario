@@ -49,6 +49,10 @@
 | SMB-016 | Piranha proximity check | 2026-02-25 | 2-tile check, NES behavior |
 | SMB-017 | Star power palette cycling | 2026-02-25 | CSS filter cycling, 4 palettes |
 | SMB-018 | Shell breaks bricks | 2026-02-25 | Particles + 50pts, shell continues |
+| SMB-020 | Level transition system | 2026-02-25 | Registry + TransitionManager, fade/pipe transitions |
+| SMB-021 | World 1-2 underground | 2026-02-25 | 426 lines, dark palette, warp zone, ceiling |
+| SMB-022 | World 1-3 athletic | 2026-02-25 | 298 lines, MovingPlatform, red Koopa, Paratroopa |
+| SMB-023 | World 1-4 castle | 2026-02-25 | 228 lines, Bowser, FireBar, lava, bridge collapse |
 
 ## Backlog
 
