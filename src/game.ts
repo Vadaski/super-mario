@@ -144,6 +144,7 @@ export class Game {
     this.entities.push(...newFromCollisions);
     this.entities = this.entities.filter(e => e.alive);
 
+    this.level.updateBumps();
     this.timerFrame++;
     if (this.timerFrame >= FPS) {
       this.timerFrame = 0;

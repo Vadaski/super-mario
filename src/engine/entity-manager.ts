@@ -191,6 +191,7 @@ export class EntityManager {
       level.setTile(col, row, TileType.QUESTION_EMPTY);
       level.removeBlockContent(col, row);
       out.push(...this.spawnFromBlock(col, row, content || 'coin', mario));
+      level.startBump(col, row);
       audio.bump();
     } else if (tile === TileType.BRICK) {
       const content = level.getBlockContent(col, row);
@@ -200,23 +201,27 @@ export class EntityManager {
         const hitCount = (brickHits.get(key) || 0) + 1;
         brickHits.set(key, hitCount);
         if (hitCount >= 10) { level.setTile(col, row, TileType.QUESTION_EMPTY); level.removeBlockContent(col, row); }
+        level.startBump(col, row);
         audio.bump();
       } else if (content) {
         level.setTile(col, row, TileType.QUESTION_EMPTY);
         level.removeBlockContent(col, row);
         out.push(...this.spawnFromBlock(col, row, content, mario));
+        level.startBump(col, row);
         audio.bump();
       } else if (mario.isBig) {
         level.setTile(col, row, TileType.EMPTY);
+        level.startBump(col, row);
         out.push(...this.spawnBrickParticles(col, row));
         audio.breakBlock(); mario.addScore(50);
-      } else { audio.bump(); }
+      } else { level.startBump(col, row); audio.bump(); }
       out.push(...this.bumpEnemiesAbove(col, row, entities, mario));
     } else if (tile === TileType.HIDDEN) {
       const content = level.getBlockContent(col, row);
       level.setTile(col, row, TileType.QUESTION_EMPTY);
       level.removeBlockContent(col, row);
       out.push(...this.spawnFromBlock(col, row, content || 'coin', mario));
+      level.startBump(col, row);
       audio.bump();
     }
     return out;

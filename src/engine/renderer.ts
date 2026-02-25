@@ -70,7 +70,8 @@ export class GameRenderer {
         if (tile === TileType.EMPTY) continue;
 
         const sx = camera.screenX(col * TILE);
-        const sy = camera.screenY(row * TILE);
+        const bumpOffset = level.getBumpOffset(col, row);
+        const sy = camera.screenY(row * TILE) + bumpOffset;
 
         switch (tile) {
           case TileType.GROUND:

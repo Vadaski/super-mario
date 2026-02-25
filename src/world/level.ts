@@ -28,10 +28,12 @@ const enum TileType {
 export class Level {
   data: LevelData;
   blockContents: Map<string, string>;
+  bumpedBlocks: Map<string, number>;
 
   constructor(data: LevelData, contents: BlockContent[]) {
     this.data = data;
     this.blockContents = new Map();
+    this.bumpedBlocks = new Map();
 
     for (const entry of contents) {
       const key = `${entry.col},${entry.row}`;
@@ -71,6 +73,33 @@ export class Level {
   /** Remove the content from a block after it has been hit. */
   removeBlockContent(col: number, row: number): void {
     this.blockContents.delete(`${col},${row}`);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Block bump animation
+  // ---------------------------------------------------------------------------
+
+  /** Start a bump animation for the block at (col, row). Timer counts down from 8. */
+  startBump(col: number, row: number): void {
+    this.bumpedBlocks.set(`${col},${row}`, 8);
+  }
+
+  /** Tick all bump timers. Call once per frame. */
+  updateBumps(): void {
+    for (const [key, timer] of this.bumpedBlocks) {
+      if (timer <= 1) {
+        this.bumpedBlocks.delete(key);
+      } else {
+        this.bumpedBlocks.set(key, timer - 1);
+      }
+    }
+  }
+
+  /** Get the vertical pixel offset for a bumping block, or 0 if not bumping. */
+  getBumpOffset(col: number, row: number): number {
+    const timer = this.bumpedBlocks.get(`${col},${row}`);
+    if (timer === undefined) return 0;
+    return -Math.sin((timer / 8) * Math.PI) * 4;
   }
 
   // ---------------------------------------------------------------------------
