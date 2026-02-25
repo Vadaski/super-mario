@@ -9,13 +9,14 @@ import { input } from './engine/input.js';
 import { Mario } from './entities/mario.js';
 import { Goomba, Koopa, Piranha, type Entity } from './entities/entities.js';
 import { Level } from './world/level.js';
-import { WORLD_1_1, blockContents } from './world/levels/world-1-1.js';
 import { sprites, initSprites } from './sprites/sprites.js';
 import { audio } from './audio/audio.js';
 import { drawHUD, drawTitleScreen, drawLevelIntro, drawGameOver } from './ui/hud.js';
 import { GameRenderer } from './engine/renderer.js';
 import { EntityManager } from './engine/entity-manager.js';
 import { WinSequence } from './engine/win-sequence.js';
+import { TransitionManager } from './engine/transitions.js';
+import { getLevelConfig, type LevelConfig } from './world/level-registry.js';
 
 export class Game {
   private gc: GameCanvas;
@@ -39,13 +40,18 @@ export class Game {
   private paused = false;
   private renderer: GameRenderer;
   private entityManager: EntityManager;
+  private currentLevelId = '1-1';
+  private levelConfig: LevelConfig;
+  private transition = new TransitionManager();
 
   constructor() {
     this.gc = new GameCanvas();
     this.ctx = this.gc.ctx;
-    this.camera = new Camera(WORLD_1_1.width);
-    this.mario = new Mario(WORLD_1_1.startX, WORLD_1_1.startY);
-    this.level = new Level(WORLD_1_1, blockContents);
+    this.levelConfig = getLevelConfig(this.currentLevelId);
+    const data = this.levelConfig.data;
+    this.camera = new Camera(data.width);
+    this.mario = new Mario(data.startX, data.startY);
+    this.level = new Level(data, this.levelConfig.contents);
     this.renderer = new GameRenderer(this.gc);
     this.entityManager = new EntityManager();
   }
@@ -71,28 +77,31 @@ export class Game {
   }
 
   private update(): void {
+    if (this.transition.active) {
+      this.transition.update();
+      input.update();
+      return;
+    }
     if (this.state === GameState.PLAYING && (input.justPressed('KeyP') || input.justPressed('Escape'))) {
       this.paused = !this.paused;
       audio.pause();
     }
-    if (this.paused) {
-      input.update();
-      return;
-    }
+    if (this.paused) { input.update(); return; }
     this.stateTimer++;
     switch (this.state) {
       case GameState.TITLE:
         if (input.startPressed) {
           this.initAudio();
+          this.currentLevelId = '1-1';
           this.state = GameState.LEVEL_INTRO;
           this.stateTimer = 0;
         }
         break;
       case GameState.LEVEL_INTRO:
         if (this.stateTimer > 150) {
-          this.startLevel();
+          this.startLevel(this.currentLevelId);
           this.state = GameState.PLAYING;
-          audio.playOverworldTheme();
+          this.playLevelMusic();
         }
         break;
       case GameState.PLAYING:
@@ -119,6 +128,7 @@ export class Game {
           this.mario.lives = 3;
           this.mario.score = 0;
           this.mario.coins = 0;
+          this.currentLevelId = '1-1';
         }
         break;
       case GameState.WIN:
@@ -164,10 +174,8 @@ export class Game {
       if (this.timer === 100) audio.warning();
       if (this.timer <= 0) {
         this.mario.die();
-        audio.stopMusic();
-        audio.die();
-        this.state = GameState.DYING;
-        this.stateTimer = 0;
+        audio.stopMusic(); audio.die();
+        this.state = GameState.DYING; this.stateTimer = 0;
       }
     }
     this.questionAnimTimer++;
@@ -176,16 +184,13 @@ export class Game {
     if (this.coinAnimTimer >= 8) { this.coinAnimTimer = 0; this.coinAnimFrame = (this.coinAnimFrame + 1) % 4; }
     if (this.fireballCooldown > 0) this.fireballCooldown--;
     if (this.mario.starPower === STAR_DURATION - 1) { audio.stopMusic(); audio.playStarTheme(); }
-    else if (this.mario.starPower === 1) { audio.stopMusic(); audio.playOverworldTheme(); }
+    else if (this.mario.starPower === 1) { audio.stopMusic(); this.playLevelMusic(); }
     if (this.mario.dying && this.state === GameState.PLAYING) {
-      audio.stopMusic();
-      audio.die();
-      this.state = GameState.DYING;
-      this.stateTimer = 0;
-      this.paused = false;
+      audio.stopMusic(); audio.die();
+      this.state = GameState.DYING; this.stateTimer = 0; this.paused = false;
     }
     if (!this.mario.onFlagpole && !this.mario.finishedLevel) {
-      const flagCol = Math.floor(WORLD_1_1.flagX / TILE);
+      const flagCol = Math.floor(this.levelConfig.data.flagX / TILE);
       if (Math.floor(this.mario.centerX / TILE) === flagCol && this.mario.y < 12 * TILE) {
         this.startFlagpole();
       }
@@ -193,46 +198,59 @@ export class Game {
   }
 
   private checkHeadHits(oldVy: number): void {
-    if (oldVy >= 0 || this.mario.vy >= 0) return;
-    if (this.mario.vy !== 0) return;
+    if (oldVy >= 0 || this.mario.vy >= 0 || this.mario.vy !== 0) return;
     const headRow = Math.floor(this.mario.y / TILE);
-    const leftCol = Math.floor((this.mario.x + 2) / TILE);
-    const rightCol = Math.floor((this.mario.x + this.mario.width - 2) / TILE);
-    for (let col = leftCol; col <= rightCol; col++) {
-      const tile = this.level.getTile(col, headRow);
-      this.entities.push(...this.entityManager.hitBlock(col, headRow, tile, this.level, this.mario, this.entities, this.brickHits));
+    const lCol = Math.floor((this.mario.x + 2) / TILE);
+    const rCol = Math.floor((this.mario.x + this.mario.width - 2) / TILE);
+    for (let c = lCol; c <= rCol; c++) {
+      this.entities.push(...this.entityManager.hitBlock(c, headRow, this.level.getTile(c, headRow), this.level, this.mario, this.entities, this.brickHits));
     }
   }
 
   private startFlagpole(): void {
+    const { flagX, castleX } = this.levelConfig.data;
     const relY = this.mario.y / TILE;
-    if (relY <= 5) this.mario.addScore(SCORES.FLAGPOLE_TOP);
-    else if (relY <= 9) this.mario.addScore(SCORES.FLAGPOLE_MID);
-    else this.mario.addScore(SCORES.FLAGPOLE_LOW);
-    this.winSeq.start(this.mario, WORLD_1_1.flagX, WORLD_1_1.castleX, this.timer);
+    this.mario.addScore(relY <= 5 ? SCORES.FLAGPOLE_TOP : relY <= 9 ? SCORES.FLAGPOLE_MID : SCORES.FLAGPOLE_LOW);
+    this.winSeq.start(this.mario, flagX, castleX, this.timer);
     this.state = GameState.WIN; this.stateTimer = 0;
   }
 
   private updateWin(): void {
-    const result = this.winSeq.update(this.mario, this.camera, this.timer);
-    this.timer = result.newTimer;
-    if (result.scoreAdd > 0) this.mario.addScore(result.scoreAdd);
-    if (result.finished) { this.state = GameState.TITLE; this.stateTimer = 0; }
+    const r = this.winSeq.update(this.mario, this.camera, this.timer);
+    this.timer = r.newTimer;
+    if (r.scoreAdd > 0) this.mario.addScore(r.scoreAdd);
+    if (r.finished && r.advanceLevel) this.advanceLevel();
+    else if (r.finished) { this.state = GameState.TITLE; this.stateTimer = 0; }
   }
 
-  private startLevel(): void {
-    this.level = new Level(WORLD_1_1, blockContents);
-    this.camera.reset(WORLD_1_1.width);
-    this.mario.reset(WORLD_1_1.startX, WORLD_1_1.startY);
+  private advanceLevel(): void {
+    const nextId = this.levelConfig.nextLevel;
+    if (!nextId) { this.state = GameState.TITLE; this.stateTimer = 0; return; }
+    audio.stopMusic();
+    this.currentLevelId = nextId;
+    this.transition.startFadeOut(() => {
+      this.state = GameState.LEVEL_INTRO; this.stateTimer = 0;
+      this.transition.startFadeIn();
+    });
+  }
+
+  private startLevel(levelId: string): void {
+    this.levelConfig = getLevelConfig(levelId);
+    const d = this.levelConfig.data;
+    this.level = new Level(d, this.levelConfig.contents);
+    this.camera.reset(d.width);
+    this.mario.reset(d.startX, d.startY);
     this.entities = []; this.timer = LEVEL_TIME;
-    this.timerFrame = 0; this.fireballCooldown = 0; this.paused = false;
-    for (const spawn of WORLD_1_1.entities) {
-      switch (spawn.type) {
-        case 'goomba': this.entities.push(new Goomba(spawn.x, spawn.y)); break;
-        case 'koopa': this.entities.push(new Koopa(spawn.x, spawn.y)); break;
-        case 'piranha': this.entities.push(new Piranha(spawn.x, spawn.y)); break;
-      }
+    this.timerFrame = 0; this.fireballCooldown = 0; this.paused = false; this.brickHits.clear();
+    for (const s of d.entities) {
+      if (s.type === 'goomba') this.entities.push(new Goomba(s.x, s.y));
+      else if (s.type === 'koopa') this.entities.push(new Koopa(s.x, s.y));
+      else if (s.type === 'piranha') this.entities.push(new Piranha(s.x, s.y));
     }
+  }
+
+  private playLevelMusic(): void {
+    if (this.levelConfig.music === 'overworld' || this.levelConfig.music === 'star') audio.playOverworldTheme();
   }
 
   private initAudio(): void {
@@ -245,25 +263,28 @@ export class Game {
         drawTitleScreen(this.ctx);
         break;
       case GameState.LEVEL_INTRO:
-        drawLevelIntro(this.ctx, '1-1', this.mario.lives);
+        drawLevelIntro(this.ctx, this.currentLevelId, this.mario.lives);
         break;
       case GameState.GAME_OVER:
         drawGameOver(this.ctx);
         break;
-      default:
+      default: {
+        const data = this.levelConfig.data;
         this.renderer.renderGame(
           this.camera, this.level, this.entities, this.mario, sprites,
           { questionAnimFrame: this.questionAnimFrame, coinAnimFrame: this.coinAnimFrame },
-          WORLD_1_1.scenery, this.timer,
+          data.scenery, this.timer,
         );
         if (this.state === GameState.WIN) {
-          this.renderer.drawPoleFlag(this.camera, WORLD_1_1.flagX, this.winSeq.flagY);
-          this.renderer.drawCastleFlag(this.camera, WORLD_1_1.castleX, this.winSeq.castleFlagY);
+          this.renderer.drawPoleFlag(this.camera, data.flagX, this.winSeq.flagY);
+          this.renderer.drawCastleFlag(this.camera, data.castleX, this.winSeq.castleFlagY);
           if (this.winSeq.fireworks.length > 0) this.renderer.drawFireworks(this.camera, this.winSeq.fireworks);
         }
-        drawHUD(this.ctx, sprites, this.mario.score, this.mario.coins, '1-1', this.timer, this.mario.lives);
+        drawHUD(this.ctx, sprites, this.mario.score, this.mario.coins, this.currentLevelId, this.timer, this.mario.lives);
         break;
+      }
     }
+    this.transition.render(this.ctx);
     if (this.paused) this.drawPauseOverlay();
   }
 

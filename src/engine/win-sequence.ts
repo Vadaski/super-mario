@@ -61,7 +61,7 @@ export class WinSequence {
     audio.flagpole();
   }
 
-  update(mario: Mario, camera: Camera, timer: number): { newTimer: number; scoreAdd: number; finished: boolean } {
+  update(mario: Mario, camera: Camera, timer: number): { newTimer: number; scoreAdd: number; finished: boolean; advanceLevel: boolean } {
     this.phaseTimer++;
     let scoreAdd = 0;
     let newTimer = timer;
@@ -144,10 +144,10 @@ export class WinSequence {
         break;
 
       case WinPhase.DONE:
-        return { newTimer, scoreAdd, finished: true };
+        return { newTimer, scoreAdd, finished: true, advanceLevel: true };
     }
 
-    return { newTimer, scoreAdd, finished: false };
+    return { newTimer, scoreAdd, finished: false, advanceLevel: false };
   }
 
   private determineFireworkCount(): void {
