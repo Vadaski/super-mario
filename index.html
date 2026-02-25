@@ -2,16 +2,150 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <title>Super Mario Bros.</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-    body { display: flex; justify-content: center; align-items: center; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #000;
+      touch-action: none;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
     canvas {
       image-rendering: pixelated;
       image-rendering: crisp-edges;
       display: block;
+    }
+
+    /* --- Portrait overlay --- */
+    #portrait-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 9999;
+      display: none; /* shown via JS when portrait */
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* --- Touch controls container --- */
+    #touch-controls {
+      display: none; /* hidden on desktop */
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 35vh;
+      z-index: 100;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 0 12px 12px;
+      pointer-events: none;
+    }
+
+    /* D-pad container */
+    .touch-dpad {
+      position: relative;
+      width: 156px;
+      height: 120px;
+      pointer-events: auto;
+    }
+
+    /* Action buttons container */
+    .touch-actions {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      pointer-events: auto;
+    }
+
+    /* Base button style */
+    .touch-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-family: monospace;
+      font-weight: bold;
+      color: rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.12);
+      border: 2px solid rgba(255,255,255,0.25);
+      pointer-events: auto;
+      transition: background 0.05s, border-color 0.05s;
+    }
+
+    /* Glow on press */
+    .touch-btn-active {
+      background: rgba(255,255,255,0.35) !important;
+      border-color: rgba(255,255,255,0.6) !important;
+      color: #fff !important;
+    }
+
+    /* D-pad directional buttons */
+    .touch-dpad-left {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 56px;
+      height: 56px;
+      font-size: 22px;
+      border-radius: 12px;
+    }
+    .touch-dpad-right {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 56px;
+      height: 56px;
+      font-size: 22px;
+      border-radius: 12px;
+    }
+    .touch-dpad-down {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: 56px;
+      height: 56px;
+      font-size: 22px;
+      border-radius: 12px;
+    }
+
+    /* A and B buttons */
+    .touch-btn-a {
+      width: 64px;
+      height: 64px;
+      font-size: 22px;
+      background: rgba(228, 60, 60, 0.25);
+      border-color: rgba(228, 60, 60, 0.5);
+    }
+    .touch-btn-b {
+      width: 56px;
+      height: 56px;
+      font-size: 20px;
+      margin-bottom: 20px;
+      background: rgba(60, 120, 228, 0.25);
+      border-color: rgba(60, 120, 228, 0.5);
+    }
+
+    /* Show touch controls only on touch devices via media query */
+    @media (pointer: coarse) {
+      #touch-controls {
+        display: flex;
+      }
     }
   </style>
 </head>

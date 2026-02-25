@@ -8,7 +8,7 @@ import { GameCanvas } from './engine/canvas.js';
 import { Camera } from './engine/camera.js';
 import { input } from './engine/input.js';
 import { Mario } from './entities/mario.js';
-import { Goomba, Koopa, Piranha, Fireball, ScorePopup, type Entity } from './entities/entities.js';
+import { Goomba, Koopa, Shell, Mushroom, FireFlower, Star, Piranha, Fireball, CoinPopup, CoinPickup, BrickParticle, ScorePopup, type Entity } from './entities/entities.js';
 import { MovingPlatform } from './entities/platforms.js';
 import { FireBar } from './entities/fire-bar.js';
 import { Bowser, BowserFire, Axe } from './entities/bowser.js';
@@ -25,6 +25,8 @@ import { getLevelConfig, type LevelConfig } from './world/level-registry.js';
 import { SpeedrunTimer } from './engine/speedrun.js';
 import { VolumeControl } from './audio/volume-control.js';
 import { CRTShader } from './engine/crt-shader.js';
+import { SaveStateManager, type SaveStateData } from './engine/save-states.js';
+import { AchievementManager } from './engine/achievements.js';
 import { TouchControls } from './input/touch-controls.js';
 
 export class Game {
@@ -61,6 +63,9 @@ export class Game {
   private toadMessageTimer = 0;
   private showToadMessage = false;
   private castleBowser: Bowser | null = null;
+  private saveStateManager = new SaveStateManager();
+  private achievements = new AchievementManager();
+  private prevMarioCoins = 0;
   private speedrun = new SpeedrunTimer();
   private volumeControl = new VolumeControl();
   private crtShader = new CRTShader();
@@ -108,6 +113,10 @@ export class Game {
       }
     }
 
+    this.achievements.update();
+    if (input.justPressed('Tab')) this.achievements.toggleViewer();
+    if (this.achievements.isViewerOpen) { input.update(); return; }
+
     if (this.transition.active) {
       this.transition.update();
       input.update();
@@ -120,12 +129,24 @@ export class Game {
       audio.pause();
     }
     if (this.paused) { input.update(); return; }
+
+    // Save/load state keys
+    if (this.state === GameState.PLAYING) {
+      if (input.justPressed('F5')) {
+        this.handleSaveState();
+      } else if (input.justPressed('F8')) {
+        this.handleLoadState();
+      }
+    }
+    this.saveStateManager.updateToast();
+
     this.stateTimer++;
     switch (this.state) {
       case GameState.TITLE:
         if (input.startPressed) {
           this.initAudio();
           this.currentLevelId = '1-1';
+          this.achievements.onGameStart();
           this.state = GameState.LEVEL_INTRO;
           this.stateTimer = 0;
           this.speedrun.startRun();
@@ -191,7 +212,10 @@ export class Game {
     // Platform riding: move Mario with moving platforms
     this.updatePlatformRiding();
 
+    const enemiesBeforeHeadHit = this.countEnemies();
     this.checkHeadHits(oldVy);
+    const headHitKills = enemiesBeforeHeadHit - this.countEnemies();
+    for (let k = 0; k < headHitKills; k++) this.achievements.onEnemyKill();
     const fbResult = this.entityManager.handleFireball(this.mario, this.entities, this.fireballCooldown, input);
     this.fireballCooldown = fbResult.cooldown;
     this.entities.push(...fbResult.newEntities);
@@ -204,8 +228,13 @@ export class Game {
     }
     const newFromBricks = this.entityManager.processShellBricks(this.entities, this.mario);
     this.entities.push(...newFromBricks);
+    const enemiesBefore = this.countEnemies();
+    const wasFireState = this.mario.isFire;
     const newFromCollisions = this.entityManager.checkEntityCollisions(this.entities, this.mario);
     this.entities.push(...newFromCollisions);
+    const killed = enemiesBefore - this.countEnemies();
+    for (let k = 0; k < killed; k++) this.achievements.onEnemyKill();
+    if (!wasFireState && this.mario.isFire) this.achievements.onFireFlower();
     this.entities = this.entities.filter(e => e.alive);
 
     this.level.updateBumps();
@@ -217,6 +246,7 @@ export class Game {
       if (this.timer <= 0) {
         this.mario.die();
         audio.stopMusic(); audio.die();
+        this.achievements.onDeath();
         this.state = GameState.DYING; this.stateTimer = 0;
       }
     }
@@ -228,8 +258,16 @@ export class Game {
     if (this.fireballCooldown > 0) this.fireballCooldown--;
     if (this.mario.starPower === STAR_DURATION - 1) { audio.stopMusic(); audio.playStarTheme(); }
     else if (this.mario.starPower === 1) { audio.stopMusic(); this.playLevelMusic(); }
+    // Track coin collection for achievements (coins wrap at 100)
+    if (this.mario.coins !== this.prevMarioCoins) {
+      const coinDiff = this.mario.coins - this.prevMarioCoins;
+      const gained = coinDiff >= 0 ? coinDiff : coinDiff + 100;
+      for (let c = 0; c < gained; c++) this.achievements.onCoinCollect();
+      this.prevMarioCoins = this.mario.coins;
+    }
     if (this.mario.dying && this.state === GameState.PLAYING) {
       audio.stopMusic(); audio.die();
+      this.achievements.onDeath();
       this.state = GameState.DYING; this.stateTimer = 0; this.paused = false;
     }
     this.speedrun.update(this.mario.x, this.mario.y);
@@ -355,6 +393,7 @@ export class Game {
           this.bridgeCollapseEnd = 71; // leftmost bridge tile
           this.bridgeCollapseTimer = 0;
           audio.stopMusic();
+          this.achievements.onBowserDefeated();
         }
       }
     }
@@ -395,6 +434,7 @@ export class Game {
     const { flagX, castleX } = this.levelConfig.data;
     const relY = this.mario.y / TILE;
     this.mario.addScore(relY <= 5 ? SCORES.FLAGPOLE_TOP : relY <= 9 ? SCORES.FLAGPOLE_MID : SCORES.FLAGPOLE_LOW);
+    this.achievements.onLevelComplete();
     this.winSeq.start(this.mario, flagX, castleX, this.timer);
     this.state = GameState.WIN; this.stateTimer = 0;
   }
@@ -423,6 +463,143 @@ export class Game {
     });
   }
 
+  private countEnemies(): number {
+    let count = 0;
+    for (const e of this.entities) {
+      if (!e.alive) continue;
+      if (e.type === EntityType.GOOMBA || e.type === EntityType.KOOPA || e.type === EntityType.PIRANHA) count++;
+    }
+    return count;
+  }
+
+  private countTotalCoins(contents: { col: number; row: number; content: string }[]): number {
+    let total = 0;
+    for (const c of contents) {
+      if (c.content === 'coin') total++;
+      else if (c.content === 'multi-coin') total += 10;
+    }
+    return total;
+  }
+
+  private handleSaveState(): void {
+    let slot: number | undefined;
+    for (const code of ['Digit1', 'Digit2', 'Digit3']) {
+      const s = SaveStateManager.parseSlotFromKey(code);
+      if (s >= 0 && input.justPressed(code)) { slot = s; break; }
+    }
+    this.saveStateManager.save({
+      currentLevelId: this.currentLevelId,
+      mario: this.mario,
+      entities: this.entities,
+      camera: this.camera,
+      level: this.level,
+      timer: this.timer,
+      timerFrame: this.timerFrame,
+      fireballCooldown: this.fireballCooldown,
+      brickHits: this.brickHits,
+      globalFrame: this.globalFrame,
+      questionAnimFrame: this.questionAnimFrame,
+      questionAnimTimer: this.questionAnimTimer,
+      coinAnimFrame: this.coinAnimFrame,
+      coinAnimTimer: this.coinAnimTimer,
+    }, slot);
+  }
+
+  private handleLoadState(): void {
+    let slot: number | undefined;
+    for (const code of ['Digit1', 'Digit2', 'Digit3']) {
+      const s = SaveStateManager.parseSlotFromKey(code);
+      if (s >= 0 && input.justPressed(code)) { slot = s; break; }
+    }
+    const data = slot !== undefined
+      ? this.saveStateManager.loadFromSlot(slot)
+      : this.saveStateManager.load();
+    if (!data) return;
+    this.restoreSaveState(data);
+  }
+
+  private restoreSaveState(data: SaveStateData): void {
+    this.currentLevelId = data.currentLevelId;
+    this.levelConfig = getLevelConfig(this.currentLevelId);
+    const levelData = this.levelConfig.data;
+    this.level = new Level(levelData, this.levelConfig.contents);
+    for (const tc of data.levelState.tileChanges) this.level.setTile(tc.col, tc.row, tc.value);
+    this.level.blockContents.clear();
+    for (const bc of data.levelState.remainingBlockContents) this.level.blockContents.set(bc.key, bc.value);
+    this.level.bumpedBlocks.clear();
+    for (const bb of data.levelState.bumpedBlocks) this.level.bumpedBlocks.set(bb.key, bb.timer);
+    this.camera.reset(levelData.width);
+    this.camera.x = data.camera.x; this.camera.y = data.camera.y;
+    const m = data.mario;
+    this.mario.x = m.x; this.mario.y = m.y; this.mario.vx = m.vx; this.mario.vy = m.vy;
+    this.mario.width = m.width; this.mario.height = m.height;
+    this.mario.state = m.state as typeof this.mario.state;
+    this.mario.facingRight = m.facingRight; this.mario.onGround = m.onGround;
+    this.mario.jumping = m.jumping; this.mario.jumpHeld = m.jumpHeld;
+    this.mario.crouching = m.crouching; this.mario.invincible = m.invincible;
+    this.mario.starPower = m.starPower; this.mario.dead = m.dead;
+    this.mario.dying = m.dying; this.mario.deathTimer = m.deathTimer;
+    this.mario.onFlagpole = m.onFlagpole; this.mario.flagSlideY = m.flagSlideY;
+    this.mario.walkFrame = m.walkFrame; this.mario.walkTimer = m.walkTimer;
+    this.mario.growTimer = m.growTimer; this.mario.growState = m.growState;
+    this.mario.stompCombo = m.stompCombo; this.mario.lives = m.lives;
+    this.mario.coins = m.coins; this.mario.score = m.score;
+    this.mario.finishedLevel = m.finishedLevel;
+    this.entities = []; this.castleBowser = null;
+    for (const ed of data.entities) {
+      const entity = this.reconstructEntity(ed);
+      if (entity) {
+        this.entities.push(entity);
+        if (entity instanceof Bowser) this.castleBowser = entity;
+      }
+    }
+    this.timer = data.timer; this.timerFrame = data.timerFrame;
+    this.fireballCooldown = data.fireballCooldown;
+    this.brickHits.clear();
+    for (const bh of data.brickHits) this.brickHits.set(bh.key, bh.count);
+    this.globalFrame = data.globalFrame;
+    this.questionAnimFrame = data.questionAnimFrame; this.questionAnimTimer = data.questionAnimTimer;
+    this.coinAnimFrame = data.coinAnimFrame; this.coinAnimTimer = data.coinAnimTimer;
+    this.state = GameState.PLAYING; this.paused = false;
+    this.bridgeCollapsing = false; this.showToadMessage = false;
+    audio.stopMusic();
+    if (this.mario.starPower > 0) audio.playStarTheme();
+    else this.playLevelMusic();
+  }
+
+  private reconstructEntity(ed: SaveStateData['entities'][number]): Entity | null {
+    const ex = ed.extra;
+    const record = ex as Record<string, unknown>;
+    let entity: Entity;
+    switch (ed.entityType) {
+      case EntityType.GOOMBA: entity = new Goomba(ed.x, ed.y); break;
+      case EntityType.KOOPA: {
+        const k = new Koopa(ed.x, ed.y);
+        k.red = record.red as boolean ?? false;
+        k.winged = record.winged as boolean ?? false;
+        entity = k; break;
+      }
+      case EntityType.SHELL: { const s = new Shell(ed.x, ed.y); s.vx = ed.vx; entity = s; break; }
+      case EntityType.MUSHROOM: { const m = new Mushroom(ed.x, ed.y); m.isOneUp = record.isOneUp as boolean ?? false; entity = m; break; }
+      case EntityType.FIRE_FLOWER: entity = new FireFlower(ed.x, ed.y); break;
+      case EntityType.STAR: entity = new Star(ed.x, ed.y); break;
+      case EntityType.PIRANHA: entity = new Piranha(ed.x, ed.y); break;
+      case EntityType.FIREBALL: entity = new Fireball(ed.x, ed.y, ed.vx > 0); break;
+      case EntityType.COIN_BLOCK: entity = new CoinPopup(ed.x, ed.y); break;
+      case EntityType.SCORE_POPUP: entity = new ScorePopup(ed.x, ed.y, record.text as number ?? 100); break;
+      case EntityType.PLATFORM: entity = new MovingPlatform(ed.x, ed.y, record.direction as 'horizontal' | 'vertical', record.minPos as number, record.maxPos as number); break;
+      case EntityType.FIRE_BAR: entity = new FireBar(record.centerX as number, record.centerY as number, record.speed as number, record.numBalls as number, record.ballSpacing as number); break;
+      case EntityType.BOWSER: { const b = new Bowser(ed.x, ed.y, record.bridgeStart as number, record.bridgeEnd as number); entity = b; break; }
+      case EntityType.BOWSER_FIRE: entity = new BowserFire(ed.x, ed.y); break;
+      case EntityType.AXE: entity = new Axe(ed.x, ed.y); break;
+      default: entity = new CoinPickup(ed.x, ed.y); break;
+    }
+    entity.x = ed.x; entity.y = ed.y; entity.vx = ed.vx; entity.vy = ed.vy;
+    entity.alive = ed.alive; entity.active = ed.active;
+    entity.facingRight = ed.facingRight; entity.onGround = ed.onGround;
+    return entity;
+  }
+
   private startLevel(levelId: string): void {
     this.levelConfig = getLevelConfig(levelId);
     const d = this.levelConfig.data;
@@ -432,6 +609,8 @@ export class Game {
     this.entities = []; this.timer = LEVEL_TIME;
     this.speedrun.beginLevel(levelId);
     this.timerFrame = 0; this.fireballCooldown = 0; this.paused = false; this.brickHits.clear();
+    this.prevMarioCoins = this.mario.coins;
+    this.achievements.onLevelStart(levelId, this.countTotalCoins(this.levelConfig.contents));
     this.bridgeCollapsing = false;
     this.showToadMessage = false;
     this.toadMessageTimer = 0;
@@ -518,7 +697,9 @@ export class Game {
       }
     }
     this.transition.render(this.ctx);
+    this.saveStateManager.drawToast(this.ctx, SCREEN_WIDTH, SCREEN_HEIGHT);
     if (this.paused) this.drawPauseOverlay();
+    this.achievements.render(this.ctx);
     this.volumeControl.renderOverlay(this.ctx);
     this.crtShader.apply(this.ctx, this.gc.canvas);
   }

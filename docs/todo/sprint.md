@@ -20,7 +20,13 @@
 ## In Progress
 | ID | Task | Owner | Started | Notes |
 |----|------|-------|---------|-------|
-| — | — | — | — | — |
+| SMB-030 | Speedrun timer | agent-30 | 2026-02-25 | Worktree isolation |
+| SMB-031 | Gamepad support | agent-31 | 2026-02-25 | Worktree isolation |
+| SMB-032 | Save states | agent-32 | 2026-02-25 | Worktree isolation |
+| SMB-033 | Sound controls | agent-33 | 2026-02-25 | Worktree isolation |
+| SMB-034 | CRT shader effect | agent-34 | 2026-02-25 | Worktree isolation |
+| SMB-035 | Responsive mobile UX | agent-35 | 2026-02-25 | Worktree isolation |
+| SMB-041 | Achievement system | agent-41 | 2026-02-25 | Worktree isolation |
 
 ## Failed
 | ID | Task | Fail Count | Reason | Last Failed |
