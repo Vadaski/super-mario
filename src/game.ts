@@ -22,6 +22,10 @@ import { EntityManager } from './engine/entity-manager.js';
 import { WinSequence } from './engine/win-sequence.js';
 import { TransitionManager } from './engine/transitions.js';
 import { getLevelConfig, type LevelConfig } from './world/level-registry.js';
+import { SpeedrunTimer } from './engine/speedrun.js';
+import { VolumeControl } from './audio/volume-control.js';
+import { CRTShader } from './engine/crt-shader.js';
+import { TouchControls } from './input/touch-controls.js';
 
 export class Game {
   private gc: GameCanvas;
@@ -57,6 +61,10 @@ export class Game {
   private toadMessageTimer = 0;
   private showToadMessage = false;
   private castleBowser: Bowser | null = null;
+  private speedrun = new SpeedrunTimer();
+  private volumeControl = new VolumeControl();
+  private crtShader = new CRTShader();
+  private touchControls: TouchControls;
 
   constructor() {
     this.gc = new GameCanvas();
@@ -68,6 +76,8 @@ export class Game {
     this.level = new Level(data, this.levelConfig.contents);
     this.renderer = new GameRenderer(this.gc);
     this.entityManager = new EntityManager();
+    this.touchControls = new TouchControls();
+    input.setTouchControls(this.touchControls);
   }
 
   async init(): Promise<void> {
@@ -91,12 +101,21 @@ export class Game {
   }
 
   private update(): void {
+    // Volume controls work in all states
+    for (const code of ['KeyM', 'Equal', 'Minus', 'NumpadAdd', 'NumpadSubtract']) {
+      if (input.justPressed(code)) {
+        this.volumeControl.handleKey(code);
+      }
+    }
+
     if (this.transition.active) {
       this.transition.update();
       input.update();
       return;
     }
-    if (this.state === GameState.PLAYING && (input.justPressed('KeyP') || input.justPressed('Escape'))) {
+    if (input.justPressed('F1')) this.speedrun.toggle();
+    if (input.justPressed('F2')) this.crtShader.toggle();
+    if (this.state === GameState.PLAYING && (input.justPressed('KeyP') || input.justPressed('Escape') || input.gamepad.startPressed)) {
       this.paused = !this.paused;
       audio.pause();
     }
@@ -109,6 +128,7 @@ export class Game {
           this.currentLevelId = '1-1';
           this.state = GameState.LEVEL_INTRO;
           this.stateTimer = 0;
+          this.speedrun.startRun();
         }
         break;
       case GameState.LEVEL_INTRO:
@@ -153,6 +173,11 @@ export class Game {
   }
 
   private updatePlaying(): void {
+    // Speedrun: start timer on first gameplay input
+    if (input.left || input.right || input.jump || input.run || input.down) {
+      this.speedrun.notifyInput();
+    }
+
     const oldVy = this.mario.vy;
     const wasOnGround = this.mario.onGround;
     this.mario.update(input, this.level);
@@ -207,6 +232,8 @@ export class Game {
       audio.stopMusic(); audio.die();
       this.state = GameState.DYING; this.stateTimer = 0; this.paused = false;
     }
+    this.speedrun.update(this.mario.x, this.mario.y);
+
     if (this.levelConfig.music === 'castle') {
       this.updateCastle();
     } else if (!this.mario.onFlagpole && !this.mario.finishedLevel) {
@@ -381,8 +408,13 @@ export class Game {
   }
 
   private advanceLevel(): void {
+    this.speedrun.recordSplit();
     const nextId = this.levelConfig.nextLevel;
-    if (!nextId) { this.state = GameState.TITLE; this.stateTimer = 0; return; }
+    if (!nextId) {
+      this.speedrun.finishRun();
+      this.state = GameState.TITLE; this.stateTimer = 0;
+      return;
+    }
     audio.stopMusic();
     this.currentLevelId = nextId;
     this.transition.startFadeOut(() => {
@@ -398,6 +430,7 @@ export class Game {
     this.camera.reset(d.width);
     this.mario.reset(d.startX, d.startY);
     this.entities = []; this.timer = LEVEL_TIME;
+    this.speedrun.beginLevel(levelId);
     this.timerFrame = 0; this.fireballCooldown = 0; this.paused = false; this.brickHits.clear();
     this.bridgeCollapsing = false;
     this.showToadMessage = false;
@@ -416,11 +449,9 @@ export class Game {
       } else if (s.type === 'platform-v') {
         this.entities.push(new MovingPlatform(s.x, s.y, 'vertical', s.minPos ?? s.y - 48, s.maxPos ?? s.y + 48, s.platformWidth));
       } else if (s.type === 'fire-bar') {
-        const fb = new FireBar(s.x, s.y, (s as { speed?: number }).speed);
-        this.entities.push(fb);
+        this.entities.push(new FireBar(s.x, s.y, s.speed));
       } else if (s.type === 'bowser') {
-        const bs = s as { bridgeStart?: number; bridgeEnd?: number };
-        const bowser = new Bowser(s.x, s.y, bs.bridgeStart ?? s.x - 80, bs.bridgeEnd ?? s.x + 80);
+        const bowser = new Bowser(s.x, s.y, s.bridgeStart ?? s.x - 80, s.bridgeEnd ?? s.x + 80);
         this.castleBowser = bowser;
         this.entities.push(bowser);
       } else if (s.type === 'axe') {
@@ -436,7 +467,11 @@ export class Game {
   }
 
   private initAudio(): void {
-    if (!this.audioInitialized) { audio.init(); this.audioInitialized = true; }
+    if (!this.audioInitialized) {
+      audio.init();
+      this.volumeControl.applyToEngine();
+      this.audioInitialized = true;
+    }
   }
 
   private render(): void {
@@ -477,11 +512,15 @@ export class Game {
           this.ctx.textAlign = 'left';
         }
         drawHUD(this.ctx, sprites, this.mario.score, this.mario.coins, this.currentLevelId, this.timer, this.mario.lives);
+        this.speedrun.renderGhost(this.ctx, this.camera.x);
+        this.speedrun.render(this.ctx);
         break;
       }
     }
     this.transition.render(this.ctx);
     if (this.paused) this.drawPauseOverlay();
+    this.volumeControl.renderOverlay(this.ctx);
+    this.crtShader.apply(this.ctx, this.gc.canvas);
   }
 
   private drawPauseOverlay(): void {

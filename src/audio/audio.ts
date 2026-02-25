@@ -784,17 +784,24 @@ export class AudioEngine {
     }
   }
 
+  setMasterVolume(v: number): void {
+    const clamped = Math.max(0, Math.min(1, v));
+    if (this.masterGain && this.ctx && !this.muted) {
+      this.masterGain.gain.setValueAtTime(clamped, this.ctx.currentTime);
+    }
+  }
+
   mute(): void {
     this.muted = true;
-    if (this.masterGain) {
-      this.masterGain.gain.setValueAtTime(0, this.ctx!.currentTime);
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime);
     }
   }
 
   unmute(): void {
     this.muted = false;
-    if (this.masterGain) {
-      this.masterGain.gain.setValueAtTime(1, this.ctx!.currentTime);
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setValueAtTime(1, this.ctx.currentTime);
     }
   }
 }
