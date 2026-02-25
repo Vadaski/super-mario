@@ -240,6 +240,21 @@ export class EntityManager {
     return out;
   }
 
+  processShellBricks(entities: Entity[], mario: Mario): Entity[] {
+    const out: Entity[] = [];
+    for (const e of entities) {
+      if (e.type !== EntityType.SHELL || !e.alive) continue;
+      const shell = e as Shell;
+      for (const brick of shell.brokenBricks) {
+        out.push(...this.spawnBrickParticles(brick.col, brick.row));
+        out.push(new ScorePopup(brick.col * TILE, brick.row * TILE, 50));
+        mario.addScore(50);
+        audio.breakBlock();
+      }
+    }
+    return out;
+  }
+
   handleFireball(mario: Mario, entities: Entity[], fireballCooldown: number, inputRef: Input): { cooldown: number; newEntities: Entity[] } {
     const newEntities: Entity[] = [];
     if (!mario.isFire || fireballCooldown > 0) return { cooldown: fireballCooldown, newEntities };

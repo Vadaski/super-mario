@@ -147,8 +147,11 @@ export class Game {
     this.entityManager.activateEntities(this.entities, this.camera);
     for (const e of this.entities) {
       if (!e.alive || !e.active) continue;
+      if (e instanceof Piranha) e.marioX = this.mario.x;
       e.update(this.level);
     }
+    const newFromBricks = this.entityManager.processShellBricks(this.entities, this.mario);
+    this.entities.push(...newFromBricks);
     const newFromCollisions = this.entityManager.checkEntityCollisions(this.entities, this.mario);
     this.entities.push(...newFromCollisions);
     this.entities = this.entities.filter(e => e.alive);

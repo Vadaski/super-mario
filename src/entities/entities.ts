@@ -1,7 +1,7 @@
 import {
   TILE, GRAVITY, MAX_FALL_SPEED, SCREEN_HEIGHT,
   GOOMBA_SPEED, KOOPA_SPEED, SHELL_SPEED, MUSHROOM_SPEED,
-  FIREBALL_SPEED, FIREBALL_BOUNCE, EntityType, SCORES,
+  FIREBALL_SPEED, FIREBALL_BOUNCE, EntityType, SCORES, TileType,
 } from '../utils/constants.js';
 import { resolveMapCollision, aabbOverlap, isStomping } from '../physics/collision.js';
 import type { Level } from '../world/level.js';
@@ -115,6 +115,7 @@ export class Shell implements Entity {
   timer = 0; frame = 0; facingRight = false; onGround = false;
   moving = false;
   shellTimer = 0; // Time before koopa pops out
+  brokenBricks: { col: number; row: number }[] = [];
 
   constructor(x: number, y: number) {
     this.x = x; this.y = y;
@@ -127,6 +128,7 @@ export class Shell implements Entity {
   }
 
   update(level: Level): void {
+    this.brokenBricks = [];
     if (!this.moving) {
       this.shellTimer++;
       // After 300 frames, Koopa pops back out (we'll handle this in game.ts)
@@ -138,12 +140,28 @@ export class Shell implements Entity {
     this.vy += GRAVITY;
     if (this.vy > MAX_FALL_SPEED) this.vy = MAX_FALL_SPEED;
 
+    const savedVx = this.vx;
     const aabb = { x: this.x, y: this.y, width: this.width, height: this.height, vx: this.vx, vy: this.vy };
     const result = resolveMapCollision(aabb, level);
     this.x = aabb.x; this.y = aabb.y; this.vx = aabb.vx; this.vy = aabb.vy;
     this.onGround = result.bottom;
 
-    if (result.left || result.right) {
+    // Check for brick tiles hit on left/right and break them
+    let hitBrick = false;
+    for (const hit of result.hitTiles) {
+      if (hit.side !== 'left' && hit.side !== 'right') continue;
+      const tile = level.getTile(hit.col, hit.row);
+      if (tile === TileType.BRICK && !level.getBlockContent(hit.col, hit.row)) {
+        level.setTile(hit.col, hit.row, TileType.EMPTY);
+        this.brokenBricks.push({ col: hit.col, row: hit.row });
+        hitBrick = true;
+      }
+    }
+
+    if (hitBrick) {
+      // Shell continues through broken bricks, restore velocity
+      this.vx = savedVx;
+    } else if (result.left || result.right) {
       this.vx = -this.vx;
     }
     if (this.y > SCREEN_HEIGHT + 32) this.alive = false;
@@ -428,6 +446,7 @@ export class Piranha implements Entity {
   emergeTimer = 0;
   retreatTimer = 0;
   state: 'hidden' | 'emerging' | 'visible' | 'retreating' = 'hidden';
+  marioX = 0;
 
   constructor(x: number, y: number) {
     this.x = x; this.baseY = y; this.y = y + 24; // start hidden
@@ -439,6 +458,7 @@ export class Piranha implements Entity {
 
     switch (this.state) {
       case 'hidden':
+        if (Math.abs(this.marioX - this.x) < 32) { this.emergeTimer = 0; break; }
         this.emergeTimer++;
         if (this.emergeTimer > 60) { this.state = 'emerging'; this.emergeTimer = 0; }
         break;

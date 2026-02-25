@@ -383,7 +383,12 @@ export class Mario {
       return;
     }
 
-    // Star power: cycle palette (handled by sprite tinting)
+    // Star power: cycle palette colors every 4 frames
+    const starFilters = ['none', 'hue-rotate(120deg)', 'hue-rotate(240deg) brightness(1.5)', 'brightness(0.2)'];
+    if (this.starPower > 0) {
+      ctx.filter = starFilters[Math.floor(this.starPower / 4) % 4];
+    }
     sprites.draw(ctx, spriteName, sx, sy, !this.facingRight);
+    if (this.starPower > 0) ctx.filter = 'none';
   }
 }
