@@ -20,7 +20,7 @@
 ## In Progress
 | ID | Task | Owner | Started | Notes |
 |----|------|-------|---------|-------|
-| SMB-010 | Fix type safety | agent-1 | 2026-02-25 | Delegated to sub-agent |
+| — | — | — | — | — |
 
 ## Failed
 | ID | Task | Fail Count | Reason | Last Failed |
@@ -40,7 +40,15 @@
 ## Done
 | ID | Task | Completed | Verification |
 |----|------|-----------|-------------|
-| — | — | — | — |
+| SMB-010 | Fix type safety | 2026-02-25 | Zero `as any`, tsc passes |
+| SMB-011 | Refactor game.ts | 2026-02-25 | 827→292 lines, 3 modules, tsc clean |
+| SMB-012 | Block bump animation | 2026-02-25 | Sine curve bump, 8 frames |
+| SMB-013 | Flag & flagpole animation | 2026-02-25 | WinSequence class, 6 phases, fireworks |
+| SMB-014 | Stomp combo scoring | 2026-02-25 | NES-accurate escalation, 1UP at 9th |
+| SMB-015 | Pause functionality | 2026-02-25 | P/Esc toggle, overlay, reset on death |
+| SMB-016 | Piranha proximity check | 2026-02-25 | 2-tile check, NES behavior |
+| SMB-017 | Star power palette cycling | 2026-02-25 | CSS filter cycling, 4 palettes |
+| SMB-018 | Shell breaks bricks | 2026-02-25 | Particles + 50pts, shell continues |
 
 ## Backlog
 
@@ -48,15 +56,6 @@
 
 | ID | Priority | Task | Description |
 |----|----------|------|-------------|
-| SMB-010 | P0 | Fix type safety | Replace all `as any` casts: `__brickHits` → `Map<string,number>` on Game, `isOneUp` → proper field on Mushroom. Zero `as any` policy. |
-| SMB-011 | P0 | Refactor game.ts | Split 827-line game.ts into modules: `GameRenderer` (tile/scenery/entity drawing), `EntityManager` (spawn, activate, cleanup, collision), `GameStateMachine` (title/playing/dying/win transitions). Max 300 lines per file. |
-| SMB-012 | P1 | Block bump animation | When Mario hits a block from below, the block visually bounces up 4px over 4 frames then returns. Track `bumpTimer` per block position. Applies to ? blocks, bricks, and hidden blocks. |
-| SMB-013 | P1 | Flag & flagpole animation | Add flag sprite that slides DOWN the pole as Mario slides down. Add castle flag that rises after Mario enters castle. Implement fireworks (1/3/6 based on timer last digit, 500pts each). |
-| SMB-014 | P1 | Stomp combo scoring | Use `stompCombo` counter to escalate scores: 100→200→400→800→1000→2000→4000→8000→1UP. Reset combo when Mario touches ground. |
-| SMB-015 | P1 | Pause functionality | P or Escape pauses game. Freeze all logic, show "PAUSE" overlay, play pause SFX. Resume on same key. |
-| SMB-016 | P1 | Piranha proximity check | Piranha Plants should not emerge if Mario is standing directly adjacent to or on top of their pipe (within 2 tiles horizontally). Match NES behavior. |
-| SMB-017 | P1 | Star power palette cycling | During star power, cycle Mario's sprite palette every 4 frames: normal→green→red→black→repeat. Implement via color replacement at draw time. |
-| SMB-018 | P1 | Shell breaks bricks | A moving shell that hits a brick tile should break it (set to EMPTY, spawn BrickParticles). This enables chain reactions. |
 
 ### Phase 2: New Levels
 
