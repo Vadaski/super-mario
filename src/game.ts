@@ -1,6 +1,7 @@
 import {
   TILE, SCORES, GameState,
   LEVEL_TIME, FPS, STAR_DURATION,
+  SCREEN_WIDTH, SCREEN_HEIGHT,
 } from './utils/constants.js';
 import { GameCanvas } from './engine/canvas.js';
 import { Camera } from './engine/camera.js';
@@ -14,6 +15,7 @@ import { audio } from './audio/audio.js';
 import { drawHUD, drawTitleScreen, drawLevelIntro, drawGameOver } from './ui/hud.js';
 import { GameRenderer } from './engine/renderer.js';
 import { EntityManager } from './engine/entity-manager.js';
+import { WinSequence } from './engine/win-sequence.js';
 
 export class Game {
   private gc: GameCanvas;
@@ -32,10 +34,9 @@ export class Game {
   private coinAnimTimer = 0;
   private audioInitialized = false;
   private fireballCooldown = 0;
-  private flagDone = false;
-  private walkToCastle = false;
   private brickHits = new Map<string, number>();
-  private walkToCastleX = 0;
+  private winSeq = new WinSequence();
+  private paused = false;
   private renderer: GameRenderer;
   private entityManager: EntityManager;
 
@@ -70,6 +71,14 @@ export class Game {
   }
 
   private update(): void {
+    if (this.state === GameState.PLAYING && (input.justPressed('KeyP') || input.justPressed('Escape'))) {
+      this.paused = !this.paused;
+      audio.pause();
+    }
+    if (this.paused) {
+      input.update();
+      return;
+    }
     this.stateTimer++;
     switch (this.state) {
       case GameState.TITLE:
@@ -170,6 +179,7 @@ export class Game {
       audio.die();
       this.state = GameState.DYING;
       this.stateTimer = 0;
+      this.paused = false;
     }
     if (!this.mario.onFlagpole && !this.mario.finishedLevel) {
       const flagCol = Math.floor(WORLD_1_1.flagX / TILE);
@@ -192,70 +202,27 @@ export class Game {
   }
 
   private startFlagpole(): void {
-    this.mario.onFlagpole = true;
-    this.mario.vx = 0;
-    this.mario.vy = 0;
-    this.mario.x = WORLD_1_1.flagX - 6;
-    audio.stopMusic();
-    audio.flagpole();
     const relY = this.mario.y / TILE;
     if (relY <= 5) this.mario.addScore(SCORES.FLAGPOLE_TOP);
     else if (relY <= 9) this.mario.addScore(SCORES.FLAGPOLE_MID);
     else this.mario.addScore(SCORES.FLAGPOLE_LOW);
-    this.state = GameState.WIN;
-    this.stateTimer = 0;
-    this.flagDone = false;
-    this.walkToCastle = false;
-    this.walkToCastleX = WORLD_1_1.castleX + 16;
+    this.winSeq.start(this.mario, WORLD_1_1.flagX, WORLD_1_1.castleX, this.timer);
+    this.state = GameState.WIN; this.stateTimer = 0;
   }
 
   private updateWin(): void {
-    if (!this.flagDone) {
-      this.mario.y += 2;
-      const poleBottom = 12 * TILE;
-      if (this.mario.y >= poleBottom) {
-        this.mario.y = poleBottom;
-        this.flagDone = true;
-        this.walkToCastle = true;
-        this.mario.onFlagpole = false;
-        this.mario.facingRight = true;
-        this.stateTimer = 0;
-        audio.stageClear();
-      }
-    } else if (this.walkToCastle) {
-      this.mario.x += 1;
-      this.mario.vx = 1;
-      this.mario.walkTimer++;
-      if (this.mario.walkTimer >= 6) {
-        this.mario.walkTimer = 0;
-        this.mario.walkFrame = (this.mario.walkFrame + 1) % 3;
-      }
-      this.camera.update(this.mario.centerX, this.mario.y);
-      if (this.mario.x >= this.walkToCastleX) {
-        this.walkToCastle = false;
-        this.mario.finishedLevel = true;
-        this.stateTimer = 0;
-      }
-    } else {
-      if (this.timer > 0) {
-        this.timer -= 2;
-        if (this.timer < 0) this.timer = 0;
-        this.mario.addScore(100);
-      } else if (this.stateTimer > 120) {
-        this.state = GameState.TITLE;
-        this.stateTimer = 0;
-      }
-    }
+    const result = this.winSeq.update(this.mario, this.camera, this.timer);
+    this.timer = result.newTimer;
+    if (result.scoreAdd > 0) this.mario.addScore(result.scoreAdd);
+    if (result.finished) { this.state = GameState.TITLE; this.stateTimer = 0; }
   }
 
   private startLevel(): void {
     this.level = new Level(WORLD_1_1, blockContents);
     this.camera.reset(WORLD_1_1.width);
     this.mario.reset(WORLD_1_1.startX, WORLD_1_1.startY);
-    this.entities = [];
-    this.timer = LEVEL_TIME;
-    this.timerFrame = 0;
-    this.fireballCooldown = 0;
+    this.entities = []; this.timer = LEVEL_TIME;
+    this.timerFrame = 0; this.fireballCooldown = 0; this.paused = false;
     for (const spawn of WORLD_1_1.entities) {
       switch (spawn.type) {
         case 'goomba': this.entities.push(new Goomba(spawn.x, spawn.y)); break;
@@ -286,8 +253,24 @@ export class Game {
           { questionAnimFrame: this.questionAnimFrame, coinAnimFrame: this.coinAnimFrame },
           WORLD_1_1.scenery, this.timer,
         );
+        if (this.state === GameState.WIN) {
+          this.renderer.drawPoleFlag(this.camera, WORLD_1_1.flagX, this.winSeq.flagY);
+          this.renderer.drawCastleFlag(this.camera, WORLD_1_1.castleX, this.winSeq.castleFlagY);
+          if (this.winSeq.fireworks.length > 0) this.renderer.drawFireworks(this.camera, this.winSeq.fireworks);
+        }
         drawHUD(this.ctx, sprites, this.mario.score, this.mario.coins, '1-1', this.timer, this.mario.lives);
         break;
     }
+    if (this.paused) this.drawPauseOverlay();
+  }
+
+  private drawPauseOverlay(): void {
+    const c = this.ctx;
+    c.fillStyle = 'rgba(0,0,0,0.5)';
+    c.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    c.font = '8px monospace'; c.fillStyle = '#FCFCFC';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('PAUSE', SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
   }
 }

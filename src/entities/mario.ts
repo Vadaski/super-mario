@@ -163,7 +163,6 @@ export class Mario {
       this.jumping = true;
       this.jumpHeld = true;
       this.onGround = false;
-      this.stompCombo = 0;
       return; // Return true to play sound in game.ts
     }
 
@@ -202,9 +201,13 @@ export class Mario {
     this.vx = aabb.vx;
     this.vy = aabb.vy;
 
+    const wasInAir = !this.onGround;
     this.onGround = result.bottom;
     if (this.onGround) {
       this.jumping = false;
+      if (wasInAir) {
+        this.stompCombo = 0;
+      }
     }
 
     // Prevent going off left edge of screen (store camera reference via level)
@@ -331,7 +334,6 @@ export class Mario {
   bounce(): void {
     this.vy = MARIO_BOUNCE_VELOCITY;
     this.jumping = true;
-    this.stompCombo++;
   }
 
   /** Get sprite name for current state */

@@ -1,5 +1,5 @@
 import {
-  TILE, SCREEN_WIDTH, SCORES, EntityType, TileType, STAR_DURATION,
+  TILE, SCREEN_WIDTH, SCORES, STOMP_SCORES, EntityType, TileType, STAR_DURATION,
 } from '../utils/constants.js';
 import { aabbOverlap, isStomping } from '../physics/collision.js';
 import type { Camera } from './camera.js';
@@ -86,8 +86,7 @@ export class EntityManager {
     }
     if (isStomping(boxOf(mario), boxOf(goomba))) {
       goomba.stomp(); mario.bounce(); audio.stomp();
-      mario.addScore(SCORES.GOOMBA_STOMP);
-      out.push(new ScorePopup(goomba.x, goomba.y, SCORES.GOOMBA_STOMP));
+      this.awardStompScore(mario, goomba.x, goomba.y, out);
     } else {
       const damaged = mario.takeDamage();
       if (damaged && !mario.dead) audio.powerDown();
@@ -102,12 +101,26 @@ export class EntityManager {
       koopa.alive = false;
       out.push(new Shell(koopa.x, koopa.y + 8));
       mario.bounce(); audio.stomp();
-      mario.addScore(SCORES.KOOPA_STOMP);
-      out.push(new ScorePopup(koopa.x, koopa.y, SCORES.KOOPA_STOMP));
+      this.awardStompScore(mario, koopa.x, koopa.y, out);
     } else {
       const damaged = mario.takeDamage();
       if (damaged && !mario.dead) audio.powerDown();
     }
+  }
+
+  private awardStompScore(mario: Mario, x: number, y: number, out: Entity[]): void {
+    const combo = mario.stompCombo;
+    if (combo >= STOMP_SCORES.length) {
+      // 9th+ consecutive stomp: award 1UP
+      mario.lives++;
+      out.push(new ScorePopup(x, y, '1UP'));
+      audio.oneUp();
+    } else {
+      const points = STOMP_SCORES[combo];
+      mario.addScore(points);
+      out.push(new ScorePopup(x, y, points));
+    }
+    mario.stompCombo++;
   }
 
   private handleShellCollision(shell: Shell, mario: Mario): void {

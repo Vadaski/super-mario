@@ -129,6 +129,10 @@ export const enum GameState {
   LEVEL_INTRO,
 }
 
+// Stomp combo escalation (NES-accurate)
+export const STOMP_SCORES = [100, 200, 400, 800, 1000, 2000, 4000, 8000];
+// Index 8+ = 1UP instead of points
+
 // Scoring
 export const SCORES = {
   COIN: 200,

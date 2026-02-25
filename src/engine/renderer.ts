@@ -8,6 +8,7 @@ import type { Mario } from '../entities/mario.js';
 import type { Entity } from '../entities/entities.js';
 import type { SpriteSheet } from '../sprites/sprites.js';
 import type { SceneryItem } from '../world/levels/world-1-1.js';
+import type { Firework } from './win-sequence.js';
 
 export interface AnimationFrames {
   questionAnimFrame: number;
@@ -180,11 +181,62 @@ export class GameRenderer {
 
   private drawCloud(x: number, y: number): void {
     this.ctx.fillStyle = COLORS.CLOUD_WHITE;
-    // Three circles for cloud
     this.ctx.beginPath();
     this.ctx.arc(x + 12, y + 8, 8, 0, Math.PI * 2);
     this.ctx.arc(x + 24, y + 4, 10, 0, Math.PI * 2);
     this.ctx.arc(x + 36, y + 8, 8, 0, Math.PI * 2);
     this.ctx.fill();
+  }
+
+  drawPoleFlag(camera: Camera, flagX: number, flagY: number): void {
+    const sx = camera.screenX(flagX);
+    const sy = camera.screenY(flagY);
+    this.ctx.fillStyle = COLORS.FLAG_GREEN;
+    // Green flag triangle pointing left from the pole
+    this.ctx.beginPath();
+    this.ctx.moveTo(sx + 8, sy);
+    this.ctx.lineTo(sx - 4, sy + 4);
+    this.ctx.lineTo(sx + 8, sy + 8);
+    this.ctx.closePath();
+    this.ctx.fill();
+  }
+
+  drawCastleFlag(camera: Camera, castleX: number, flagY: number): void {
+    const sx = camera.screenX(castleX + 2.5 * TILE);
+    const sy = camera.screenY(flagY);
+    // Pole
+    this.ctx.fillStyle = COLORS.BLACK;
+    this.ctx.fillRect(sx, sy, 1, 16);
+    // Flag triangle
+    this.ctx.fillStyle = '#B81810';
+    this.ctx.beginPath();
+    this.ctx.moveTo(sx + 1, sy);
+    this.ctx.lineTo(sx + 9, sy + 3);
+    this.ctx.lineTo(sx + 1, sy + 6);
+    this.ctx.closePath();
+    this.ctx.fill();
+  }
+
+  drawFireworks(camera: Camera, fireworks: Firework[]): void {
+    const colors = ['#FCFCFC', '#B81810', '#FCA044', '#00A800'];
+    for (const fw of fireworks) {
+      const sx = camera.screenX(fw.x);
+      const sy = camera.screenY(fw.y);
+      const progress = fw.frame / fw.maxFrames;
+      const radius = 4 + progress * 16;
+      const count = 8;
+      const colorIdx = fw.frame % colors.length;
+      this.ctx.fillStyle = colors[colorIdx];
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count;
+        const px = sx + Math.cos(angle) * radius;
+        const py = sy + Math.sin(angle) * radius;
+        this.ctx.fillRect(px - 1, py - 1, 3, 3);
+      }
+      // Center burst
+      if (progress < 0.5) {
+        this.ctx.fillRect(sx - 1, sy - 1, 3, 3);
+      }
+    }
   }
 }

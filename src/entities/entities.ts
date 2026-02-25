@@ -398,7 +398,7 @@ export class ScorePopup implements Entity {
   timer = 0; frame = 0; facingRight = true; onGround = false;
   text: string;
 
-  constructor(x: number, y: number, score: number) {
+  constructor(x: number, y: number, score: number | string) {
     this.x = x; this.y = y; this.text = score.toString();
   }
 
