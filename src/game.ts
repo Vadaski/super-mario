@@ -696,7 +696,7 @@ export class Game {
     this.fpsCounter.beginFrame();
     switch (this.state) {
       case GameState.TITLE:
-        drawTitleScreen(this.ctx);
+        drawTitleScreen(this.ctx, this.stateTimer);
         break;
       case GameState.LEVEL_INTRO:
         drawLevelIntro(this.ctx, this.currentLevelId, this.mario.lives);

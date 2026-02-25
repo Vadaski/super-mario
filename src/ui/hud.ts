@@ -67,7 +67,7 @@ export function drawLevelIntro(
   ctx.textAlign = 'left';
 }
 
-export function drawTitleScreen(ctx: CanvasRenderingContext2D): void {
+export function drawTitleScreen(ctx: CanvasRenderingContext2D, frame: number): void {
   // Sky background
   ctx.fillStyle = COLORS.SKY;
   ctx.fillRect(0, 0, SCREEN_WIDTH, 240);
@@ -86,27 +86,41 @@ export function drawTitleScreen(ctx: CanvasRenderingContext2D): void {
   // Title
   ctx.font = '16px monospace';
   ctx.fillStyle = COLORS.MARIO_RED;
-  ctx.fillText('SUPER MARIO BROS.', SCREEN_WIDTH / 2, 48);
+  ctx.fillText('SUPER MARIO BROS.', SCREEN_WIDTH / 2, 40);
 
   // Subtitle
   ctx.font = '8px monospace';
   ctx.fillStyle = COLORS.WHITE;
-  ctx.fillText('HTML5 EDITION', SCREEN_WIDTH / 2, 72);
+  ctx.fillText('HTML5 EDITION', SCREEN_WIDTH / 2, 62);
 
-  // Copyright
+  // VA Wishing Engine branding
   ctx.fillStyle = COLORS.COIN_GOLD;
-  ctx.fillText('\u00A9 VA-WISH-ENGINE 2026', SCREEN_WIDTH / 2, 100);
+  ctx.fillText('\u2728 Powered by VA Wishing Engine \u2728', SCREEN_WIDTH / 2, 82);
+  ctx.fillStyle = '#A4A4A4';
+  ctx.font = '7px monospace';
+  ctx.fillText('One wish. Fully autonomous. Any frontier model.', SCREEN_WIDTH / 2, 94);
 
   // Menu
+  ctx.font = '8px monospace';
   ctx.fillStyle = COLORS.WHITE;
-  ctx.fillText('\u25B6  1 PLAYER GAME', SCREEN_WIDTH / 2, 140);
+  const blink = Math.floor(frame / 30) % 2 === 0;
+  if (blink) {
+    ctx.fillText('\u25B6  PRESS ENTER TO START', SCREEN_WIDTH / 2, 120);
+  }
+
+  // Feature highlights
+  ctx.fillStyle = '#FCA044';
+  ctx.fillText('28 FEATURES \u2022 4 WORLDS \u2022 0 DEPENDENCIES', SCREEN_WIDTH / 2, 142);
 
   // Controls
-  ctx.font = '8px monospace';
   ctx.fillStyle = '#A4A4A4';
-  ctx.fillText('ARROWS/WASD = MOVE', SCREEN_WIDTH / 2, 168);
-  ctx.fillText('SPACE/X = JUMP  Z = RUN', SCREEN_WIDTH / 2, 180);
-  ctx.fillText('ENTER = START', SCREEN_WIDTH / 2, 192);
+  ctx.fillText('ARROWS/WASD = MOVE', SCREEN_WIDTH / 2, 162);
+  ctx.fillText('SPACE/X = JUMP  Z = RUN', SCREEN_WIDTH / 2, 174);
+
+  // Copyright
+  ctx.fillStyle = '#585858';
+  ctx.font = '7px monospace';
+  ctx.fillText('\u00A9 2026 VA Series \u2022 github.com/user/va-wish-engine', SCREEN_WIDTH / 2, 194);
 
   ctx.textAlign = 'left';
 }

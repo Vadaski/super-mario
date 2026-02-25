@@ -2,11 +2,13 @@
 
 > A complete Super Mario Bros. recreation built entirely in the browser with TypeScript + Canvas 2D.
 > **Zero runtime dependencies. 37 modules. 10,000 lines. 41KB gzipped.**
+>
+> **Built from a single wish using the [VA Wishing Engine](https://github.com/Vadaski/va-wish-engine) — a universal autonomous development protocol for any frontier model.**
 
 ## [Play Now](https://vadaski.github.io/super-mario/)
 
 <p align="center">
-  <a href="https://vadaski.github.io/super-mario/"><img src="https://img.shields.io/badge/Play_Now-vadaski.github.io/super--mario-E52521?style=for-the-badge&logo=nintendo&logoColor=white" alt="Play Now" /></a>
+  <a href="https://vadaski.github.io/super-mario/"><img src="https://img.shields.io/badge/Play_Now-vadaski.github.io/super--mario-E52521?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik04IDV2MTRMIDE5IDEyeiIvPjwvc3ZnPg==&logoColor=white" alt="Play Now" /></a>
 </p>
 
 <p align="center">
@@ -18,26 +20,78 @@
 
 ---
 
-## What Makes This Different
+## The VA Wishing Engine — One Wish, Full Autonomy
 
-This isn't a toy demo or a sprite-swapping tutorial project. It's a **feature-complete game engine** with 28 integrated systems — NES-accurate gameplay, 4 full levels, a level editor, speedrun tools, accessibility features, and a CRT shader — all hand-written from scratch in a single day by **Claude Code** using a multi-agent auto-pilot pipeline.
+This project exists as a **showcase** for the [VA Wishing Engine](https://github.com/Vadaski/va-wish-engine) — a universal autonomous development protocol from the **VA Series**.
 
-### The Numbers
+### What is the VA Wishing Engine?
 
-| Metric | Value |
-|--------|-------|
-| TypeScript modules | 37 |
-| Lines of code | ~10,000 |
-| Production dependencies | **0** |
-| Minified bundle | 168 KB |
-| Gzipped bundle | **41 KB** |
-| Build time | 237ms |
-| Tasks completed | 28 |
-| Git commits | 15 |
+The VA Wishing Engine is **not a plugin for any specific AI tool**. It's a **model-agnostic protocol** — a structured methodology that works with **any frontier model** (Claude, GPT, Gemini, or whatever comes next) to turn a single, vague wish into a fully autonomous development pipeline.
+
+```
+Input:  "完成你的理想，你的游戏梦"  (Complete your ideal, your game dream)
+Output: 28 features, 37 modules, 10,000 lines, 4 levels — fully playable in the browser
+```
+
+### How It Works
+
+The Wishing Engine is a **3-layer autonomous protocol**:
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Layer 1: Wish Decomposition                         │
+│  "Build a game" → 28 structured tasks with           │
+│  priorities, dependencies, and acceptance criteria    │
+├─────────────────────────────────────────────────────┤
+│  Layer 2: Multi-Agent Orchestration                  │
+│  Orchestrator delegates to parallel sub-agents       │
+│  (up to 7 concurrent), each in isolated workspace    │
+├─────────────────────────────────────────────────────┤
+│  Layer 3: Quality Gate & Integration                 │
+│  Type check → Build → Review → Merge → Next task     │
+└─────────────────────────────────────────────────────┘
+```
+
+**Key principle**: The orchestrating agent **never writes code**. It only plans, delegates, reviews, and integrates. The actual coding is done by sub-agents with clear briefs and isolated workspaces.
+
+### Why It's Universal
+
+The VA Wishing Engine doesn't depend on any specific model's API or tool ecosystem. It's built on:
+
+- **A sprint board protocol** — A state machine (`Backlog → In Progress → Review → Testing → Done`) that any model can follow
+- **Structured task decomposition** — Breaking wishes into prioritized, independent work units
+- **Parallel delegation with isolation** — Sub-agents work in git worktrees (or any isolation mechanism) to avoid conflicts
+- **Quality gates** — Automated verification (type check, build, test) after every integration
+
+This means: **swap the model, keep the protocol, get the same results.** The Wishing Engine is the methodology, not the model.
+
+### The Development Timeline of This Game
+
+The entire project — from empty directory to playable game with 28 features — was completed in **one continuous session**:
+
+| Phase | Tasks | Strategy | Parallelism |
+|-------|-------|----------|-------------|
+| Foundation | 9 tasks | Sequential | 1 agent (establish patterns) |
+| New Levels | 4 tasks | Parallel | 3 agents (underground, athletic, castle) |
+| Modern Features | 6 tasks | Parallel | **7 concurrent agents** |
+| Extraordinary | 4 tasks | Parallel | 3 agents (editor, accessibility, perf) |
+
+### What the Wishing Engine Did in This Project
+
+1. **Analyzed the empty repo** — Detected TypeScript + Vite, no tests, no source code
+2. **Generated 28 tasks across 4 phases** — Each with priority (P0-P3), description, and acceptance criteria
+3. **Chose parallelization strategy** — Sequential for foundation (to establish patterns), then massively parallel for features
+4. **Delegated with clear briefs** — Each sub-agent received: files to modify, constraints, completion criteria
+5. **Resolved merge conflicts** — When 7 agents simultaneously modified `game.ts`, the orchestrator manually integrated each diff
+6. **Quality-gated every step** — `tsc --noEmit` + `vite build` after every integration, zero tolerance for type errors
+
+### Learn More / Use It Yourself
+
+**[github.com/Vadaski/va-wish-engine](https://github.com/Vadaski/va-wish-engine)** — The VA Series Wishing Engine. Works with any frontier model. Give it a wish and watch it build.
 
 ---
 
-## Features
+## Game Features
 
 ### NES-Accurate Gameplay
 - **Stomp combo scoring**: 100 → 200 → 400 → 800 → 1000 → 2000 → 4000 → 8000 → 1UP (9th+ consecutive stomp)
@@ -48,34 +102,52 @@ This isn't a toy demo or a sprite-swapping tutorial project. It's a **feature-co
 - **Win sequence**: 6-phase animation — flag slide → walk to castle → castle flag raise → fireworks → level complete
 
 ### Complete World 1 (4 Levels)
-- **1-1 Overworld** — The classic. Hills, pipes, Goombas, Koopas, question blocks, the flagpole
+- **1-1 Overworld** — Hills, pipes, Goombas, Koopas, question blocks, the flagpole
 - **1-2 Underground** — Dark palette, ceiling tiles, warp zone ("WELCOME TO WARP ZONE!")
-- **1-3 Athletic** — Moving platforms, balance lifts, Red Koopas (turn at edges), Paratroopas (winged + bouncing)
-- **1-4 Castle** — Bowser boss (walk/jump/breathe fire AI), rotating fire bars, lava with shimmer, axe + bridge collapse, Toad message
+- **1-3 Athletic** — Moving platforms, balance lifts, Red Koopas, Paratroopas
+- **1-4 Castle** — Bowser boss AI, rotating fire bars, lava shimmer, axe + bridge collapse, Toad message
 
-### Level Transition System
-- Pipe-entry animations (Mario slides down)
-- Fade/iris screen transitions
-- Level registry for overworld ↔ underground ↔ castle seamless switching
-
-### Modern Game Features
+### 14 Modern Features
 
 | Feature | Key | Description |
 |---------|-----|-------------|
-| Speedrun Timer | `F1` | mm:ss.ms splits, personal bests, **ghost replay** (transparent Mario replays your best run) |
-| CRT Shader | `F2` | Scanlines, barrel distortion, bloom, vignette — auto-disables below 55fps |
-| Colorblind Mode | `F3` | Protanopia / Deuteranopia / Tritanopia via SVG feColorMatrix filters |
+| Speedrun Timer | `F1` | mm:ss.ms splits, personal bests, **ghost replay** |
+| CRT Shader | `F2` | Scanlines, barrel distortion, bloom, vignette |
+| Colorblind Mode | `F3` | Protanopia / Deuteranopia / Tritanopia |
 | Slow Motion | `F4` | 50% speed for accessibility |
-| Save States | `F5`/`F8` | 3 slots, full state serialization (all entities + tiles + score + camera) |
+| Save States | `F5`/`F8` | 3 slots, full state serialization |
 | High Contrast | `F6` | Enhanced visibility mode |
-| Key Remapping | `F7` | Fully customizable controls, persisted to localStorage |
-| FPS Counter | `F9` | Color-coded (green/yellow/red), min FPS, frame time |
-| Level Editor | `F10` | Grid placement, test-play, **Base64 export/import via URL params** |
+| Key Remapping | `F7` | Fully customizable controls |
+| FPS Counter | `F9` | Color-coded performance monitoring |
+| Level Editor | `F10` | Grid placement, test-play, Base64 export/import |
 | Achievements | `Tab` | 10 trophies with toast notifications |
-| Mute/Volume | `M`/`+`/`-` | Speaker overlay, remembered in localStorage |
-| Pause | `P`/`Esc` | Overlay with reset-on-death |
-| Gamepad | Plug & Play | Xbox/PS layouts, analog stick with dead zone, connection toast |
-| Touch Controls | Auto | Virtual D-pad + action buttons, multi-touch, portrait warning |
+| Volume | `M`/`+`/`-` | Mute toggle, volume control |
+| Pause | `P`/`Esc` | Pause with overlay |
+| Gamepad | Auto | Xbox/PS, analog stick, plug & play |
+| Touch | Auto | Virtual D-pad, multi-touch, portrait warning |
+
+---
+
+## Technical Highlights
+
+| Technique | What It Does |
+|-----------|-------------|
+| **Procedural sprites** | All graphics generated at runtime via Canvas 2D — zero image assets |
+| **Web Audio synthesis** | Sound effects from oscillators — zero audio files |
+| **Offscreen tile cache** | Pre-renders to offscreen canvas, only re-draws changed tiles |
+| **Entity object pool** | Zero-allocation array compaction in the game loop — no GC pauses |
+| **Const enums** | TypeScript const enums for zero-overhead type safety at runtime |
+
+### The Numbers
+
+| Metric | Value |
+|--------|-------|
+| TypeScript modules | 37 |
+| Lines of code | ~10,000 |
+| Production dependencies | **0** |
+| Gzipped bundle | **41 KB** |
+| Build time | 237ms |
+| Autonomous tasks completed | 28 |
 
 ---
 
@@ -87,8 +159,6 @@ cd super-mario
 npm install
 npm run dev
 ```
-
-Open `http://localhost:5173` and play.
 
 ### Controls
 
@@ -107,145 +177,25 @@ Open `http://localhost:5173` and play.
 src/
 ├── main.ts                    # Entry point
 ├── game.ts                    # Game orchestrator (~850 lines)
-├── engine/
-│   ├── camera.ts              # Viewport tracking
-│   ├── canvas.ts              # Canvas setup & scaling
-│   ├── input.ts               # Keyboard + gamepad integration
-│   ├── renderer.ts            # Tile & entity rendering
-│   ├── entity-manager.ts      # Collision handling & entity spawning
-│   ├── tile-cache.ts          # Offscreen canvas tile caching
-│   ├── object-pool.ts         # Entity pool + zero-alloc compaction
-│   ├── fps-counter.ts         # Performance monitoring
-│   ├── crt-shader.ts          # Post-processing CRT effect
-│   ├── save-states.ts         # Full state serialization (3 slots)
-│   ├── achievements.ts        # 10 trophies + toast UI
-│   ├── speedrun.ts            # Timer, splits, ghost replay
-│   ├── accessibility.ts       # Colorblind, slow-mo, high-contrast, remap
-│   ├── level-editor.ts        # Grid editor + Base64 export
-│   ├── transitions.ts         # Fade/pipe transitions
-│   └── win-sequence.ts        # Flagpole → fireworks sequence
-├── entities/
-│   ├── mario.ts               # Player physics & state machine
-│   ├── entities.ts            # Goomba, Koopa, Shell, items, particles
-│   ├── bowser.ts              # Boss AI + fire breathing
-│   ├── fire-bar.ts            # Rotating fireball chains
-│   └── platforms.ts           # Moving & balance platforms
-├── world/
-│   ├── level.ts               # Tile access, collision, bump animation
-│   ├── level-registry.ts      # Level loading & transitions
-│   └── levels/
-│       ├── world-1-1.ts       # Overworld
-│       ├── world-1-2.ts       # Underground + warp zone
-│       ├── world-1-3.ts       # Athletic (platforms)
-│       └── world-1-4.ts       # Castle + Bowser
-├── physics/
-│   └── collision.ts           # AABB overlap & stomp detection
-├── sprites/
-│   └── sprites.ts             # Procedural sprite generation
-├── audio/
-│   ├── audio.ts               # Web Audio API synthesized music
-│   └── volume-control.ts      # M/+/- volume with overlay
-├── input/
-│   ├── gamepad.ts             # Gamepad API, Xbox/PS, analog stick
-│   └── touch-controls.ts      # Mobile virtual D-pad
-├── ui/
-│   └── hud.ts                 # Score, coins, timer, lives display
-└── utils/
-    └── constants.ts           # TILE, SCREEN_WIDTH, colors, scores
+├── engine/                    # 13 engine modules
+│   ├── camera.ts, canvas.ts, input.ts, renderer.ts
+│   ├── entity-manager.ts, tile-cache.ts, object-pool.ts
+│   ├── crt-shader.ts, save-states.ts, achievements.ts
+│   ├── speedrun.ts, accessibility.ts, level-editor.ts
+│   ├── fps-counter.ts, transitions.ts, win-sequence.ts
+├── entities/                  # 5 entity modules
+│   ├── mario.ts, entities.ts, bowser.ts
+│   ├── fire-bar.ts, platforms.ts
+├── world/                     # Level system
+│   ├── level.ts, level-registry.ts
+│   └── levels/ (1-1, 1-2, 1-3, 1-4)
+├── physics/collision.ts       # AABB + stomp detection
+├── sprites/sprites.ts         # Procedural sprite generation
+├── audio/                     # Web Audio synthesis + volume
+├── input/                     # Gamepad + touch controls
+├── ui/hud.ts                  # Score, coins, timer display
+└── utils/constants.ts         # Physics, colors, scoring
 ```
-
-### Key Technical Decisions
-
-- **Procedural sprites** — All graphics generated at runtime via Canvas 2D drawing. No image assets to load.
-- **Web Audio API synthesis** — Sound effects synthesized with oscillators. No audio files.
-- **Offscreen tile cache** — Pre-renders tiles to an offscreen canvas, only re-rendering changed tiles.
-- **Entity object pool** — Reuses entity objects to avoid GC pressure. Zero-allocation array compaction in the hot loop.
-- **Const enums** — All tile types and entity types use TypeScript const enums for zero-overhead type safety.
-
----
-
-## How This Was Built — The VA Wishing Engine Story
-
-This project was built in a single session using **Claude Code**'s auto-pilot pipeline — a multi-agent orchestration system powered by [va-wish-engine](https://github.com/user/va-wish-engine) (VA Series Wishing Engine).
-
-### What is the VA Wishing Engine?
-
-The VA Wishing Engine is a skill system for Claude Code that transforms a single wish ("build my dream game") into a fully automated development pipeline:
-
-1. **Auto-Pilot Protocol** — A state machine that manages the entire development lifecycle:
-   ```
-   Backlog → In Progress → Review → Testing → Done
-                  ↑                     │
-                  └──── Failed ←────────┘
-   ```
-
-2. **Sprint Board** (`docs/todo/sprint.md`) — Single source of truth for all work. Tasks are prioritized (P0-P3), tracked through states, and verified before completion.
-
-3. **Multi-Agent Delegation** — The orchestrator (Claude Code main process) never writes code directly. Instead, it delegates to specialized sub-agents using **git worktree isolation**:
-   - Each agent gets an isolated copy of the repository
-   - Multiple agents work in parallel (up to 7 concurrent)
-   - The orchestrator merges results back to main
-
-4. **Quality Gates** — Every task passes through:
-   - `tsc --noEmit` (type checking)
-   - `vite build` (bundle verification)
-   - Manual integration review by the orchestrator
-
-### The Development Timeline
-
-The entire project was completed in one continuous auto-pilot session:
-
-| Phase | Tasks | Strategy |
-|-------|-------|----------|
-| **Phase 1: Foundation** | SMB-010 to SMB-018 (9 tasks) | Sequential — establish core engine, physics, entities |
-| **Phase 2: New Levels** | SMB-020 to SMB-023 (4 tasks) | 3 parallel agents — underground, athletic, castle levels simultaneously |
-| **Phase 3: Modern Features** | SMB-030 to SMB-035 (6 tasks) | 7 parallel agents — all features built simultaneously in isolated worktrees |
-| **Phase 4: Extraordinary** | SMB-040 to SMB-043 (4 tasks) | 3 parallel agents — editor, accessibility, performance optimization |
-
-### What the Wishing Engine Actually Did
-
-The key innovation is **turning a vague wish into structured, executable work**:
-
-```
-User's wish: "用这个完成你的理想，你的游戏梦"
-             (Use this to complete your ideal, your game dream)
-```
-
-The VA Wishing Engine:
-
-1. **Analyzed the project** — Detected TypeScript + Vite stack, no existing tests, empty repo
-2. **Generated infrastructure** — Sprint board, protocol docs, task backlog with 28 tasks across 4 phases
-3. **Prioritized intelligently** — Foundation first, then content, then features, then polish
-4. **Delegated with context** — Each sub-agent received a detailed brief with:
-   - Exact files to modify
-   - Completion criteria
-   - Constraints (no new dependencies, match existing patterns)
-5. **Resolved conflicts** — When parallel agents modified the same files, the orchestrator manually merged changes
-6. **Quality-gated everything** — TypeScript compilation and Vite build verified after every integration
-
-### Challenges Solved
-
-- **Parallel merge conflicts**: Multiple agents modifying `game.ts` simultaneously. Solved by worktree isolation + manual diff integration.
-- **Constructor signature mismatches**: Agent code assumed wrong argument counts. Fixed by the orchestrator during integration.
-- **Shell quoting issues**: HEREDOC commit messages with apostrophes. Fixed by switching to double-quoted strings.
-- **Feature ordering in render pipeline**: 8+ overlay systems needed correct z-ordering. Carefully sequenced: game → transition → save toast → pause → achievements → volume → accessibility → FPS → CRT.
-
----
-
-## Build & Deploy
-
-```bash
-# Development
-npm run dev
-
-# Production build
-npm run build     # outputs to dist/
-
-# Preview production build
-npm run preview
-```
-
-The `dist/` folder contains a single HTML file and a single JS bundle. Deploy anywhere that serves static files.
 
 ---
 
@@ -256,5 +206,7 @@ MIT
 ---
 
 <p align="center">
-  <sub>Built with Claude Code + VA Wishing Engine | 37 modules | 0 dependencies | 41KB gzipped</sub>
+  <b>Built with the <a href="https://github.com/Vadaski/va-wish-engine">VA Wishing Engine</a></b><br/>
+  <sub>One wish. Fully autonomous. Any frontier model.</sub><br/>
+  <sub>37 modules | 0 dependencies | 41KB gzipped</sub>
 </p>
