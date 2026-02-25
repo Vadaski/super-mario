@@ -30,7 +30,7 @@ function loadPB(): PersonalBest | null {
 }
 
 function savePB(pb: PersonalBest): void {
-  localStorage.setItem(STORAGE_PB_KEY, JSON.stringify(pb));
+  try { localStorage.setItem(STORAGE_PB_KEY, JSON.stringify(pb)); } catch { /* quota exceeded */ }
 }
 
 function loadGhost(): LevelGhost[] {
@@ -42,7 +42,7 @@ function loadGhost(): LevelGhost[] {
 }
 
 function saveGhost(ghost: LevelGhost[]): void {
-  localStorage.setItem(STORAGE_GHOST_KEY, JSON.stringify(ghost));
+  try { localStorage.setItem(STORAGE_GHOST_KEY, JSON.stringify(ghost)); } catch { /* quota exceeded */ }
 }
 
 export class SpeedrunTimer {

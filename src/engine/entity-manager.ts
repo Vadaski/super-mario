@@ -265,7 +265,7 @@ export class EntityManager {
   handleFireball(mario: Mario, entities: Entity[], fireballCooldown: number, inputRef: Input): { cooldown: number; newEntities: Entity[] } {
     const newEntities: Entity[] = [];
     if (!mario.isFire || fireballCooldown > 0) return { cooldown: fireballCooldown, newEntities };
-    if (inputRef.run && inputRef.justPressed('KeyZ') || inputRef.justPressed('ShiftLeft') || inputRef.justPressed('ShiftRight')) {
+    if (inputRef.run && (inputRef.justPressed('KeyZ') || inputRef.justPressed('ShiftLeft') || inputRef.justPressed('ShiftRight'))) {
       let fbCount = 0;
       for (let i = 0; i < entities.length; i++) {
         if (entities[i].type === EntityType.FIREBALL && entities[i].alive) fbCount++;

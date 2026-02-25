@@ -149,7 +149,7 @@ export class Game {
     if (input.justPressed('F9')) this.fpsCounter.toggle();
     if (this.state === GameState.PLAYING && (input.justPressed('KeyP') || input.justPressed('Escape') || input.gamepad.startPressed)) {
       this.paused = !this.paused;
-      audio.pause();
+      if (this.paused) audio.pause();
     }
     if (this.paused) { input.update(); return; }
 
@@ -292,7 +292,7 @@ export class Game {
     this.globalFrame++;
     if (this.fireballCooldown > 0) this.fireballCooldown--;
     if (this.mario.starPower === STAR_DURATION - 1) { audio.stopMusic(); audio.playStarTheme(); }
-    else if (this.mario.starPower === 1) { audio.stopMusic(); this.playLevelMusic(); }
+    else if (this.mario.starPower > 0 && this.mario.starPower <= 2) { audio.stopMusic(); this.playLevelMusic(); }
     // Track coin collection for achievements (coins wrap at 100)
     if (this.mario.coins !== this.prevMarioCoins) {
       const coinDiff = this.mario.coins - this.prevMarioCoins;
@@ -318,7 +318,7 @@ export class Game {
   }
 
   private checkHeadHits(oldVy: number): void {
-    if (oldVy >= 0 || this.mario.vy >= 0 || this.mario.vy !== 0) return;
+    if (oldVy >= 0) return;
     const headRow = Math.floor(this.mario.y / TILE);
     const lCol = Math.floor((this.mario.x + 2) / TILE);
     const rCol = Math.floor((this.mario.x + this.mario.width - 2) / TILE);
@@ -356,6 +356,7 @@ export class Game {
     if (lavaTile === TileType.LAVA) {
       this.mario.die();
       audio.stopMusic(); audio.die();
+      this.achievements.onDeath();
       this.state = GameState.DYING; this.stateTimer = 0;
       return;
     }
@@ -370,6 +371,7 @@ export class Game {
         if (damaged && !this.mario.dead) audio.powerDown();
         if (this.mario.dead) {
           audio.stopMusic(); audio.die();
+          this.achievements.onDeath();
           this.state = GameState.DYING; this.stateTimer = 0;
           return;
         }
@@ -385,6 +387,11 @@ export class Game {
         if (this.mario.starPower > 0) { e.alive = false; continue; }
         const damaged = this.mario.takeDamage();
         if (damaged && !this.mario.dead) audio.powerDown();
+        if (this.mario.dead) {
+          audio.stopMusic(); audio.die();
+          this.state = GameState.DYING; this.stateTimer = 0;
+          return;
+        }
       }
     }
 

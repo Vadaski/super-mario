@@ -161,9 +161,9 @@ function buildTiles(): number[][] {
     tiles[r][99] = CS;
     tiles[r][98] = CS;
   }
-  // Wall separating boss from Toad room (cols 89-90, rows 2-11)
-  // (but leave row 12 open so bridge collapse makes sense)
-  for (let r = 2; r <= 11; r++) {
+  // Wall separating boss from Toad room (cols 89, rows 2-10)
+  // Leave rows 11-12 open so Mario can walk across bridge to reach the axe
+  for (let r = 2; r <= 10; r++) {
     tiles[r][89] = CS;
   }
 

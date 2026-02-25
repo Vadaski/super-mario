@@ -191,7 +191,7 @@ export class BowserFire implements Entity {
     this.y += this.vy;
     this.timer++;
     this.frame = Math.floor(this.timer / 4) % 2;
-    if (this.x < -32 || this.y > SCREEN_HEIGHT + 32) this.alive = false;
+    if (this.timer > 600 || this.y > SCREEN_HEIGHT + 32) this.alive = false;
   }
 
   draw(ctx: CanvasRenderingContext2D, _sprites: SpriteSheet, camera: Camera): void {
