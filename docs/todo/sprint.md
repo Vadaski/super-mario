@@ -20,13 +20,7 @@
 ## In Progress
 | ID | Task | Owner | Started | Notes |
 |----|------|-------|---------|-------|
-| SMB-030 | Speedrun timer | agent-30 | 2026-02-25 | Worktree isolation |
-| SMB-031 | Gamepad support | agent-31 | 2026-02-25 | Worktree isolation |
-| SMB-032 | Save states | agent-32 | 2026-02-25 | Worktree isolation |
-| SMB-033 | Sound controls | agent-33 | 2026-02-25 | Worktree isolation |
-| SMB-034 | CRT shader effect | agent-34 | 2026-02-25 | Worktree isolation |
-| SMB-035 | Responsive mobile UX | agent-35 | 2026-02-25 | Worktree isolation |
-| SMB-041 | Achievement system | agent-41 | 2026-02-25 | Worktree isolation |
+| — | — | — | — | — |
 
 ## Failed
 | ID | Task | Fail Count | Reason | Last Failed |
@@ -59,6 +53,13 @@
 | SMB-021 | World 1-2 underground | 2026-02-25 | 426 lines, dark palette, warp zone, ceiling |
 | SMB-022 | World 1-3 athletic | 2026-02-25 | 298 lines, MovingPlatform, red Koopa, Paratroopa |
 | SMB-023 | World 1-4 castle | 2026-02-25 | 228 lines, Bowser, FireBar, lava, bridge collapse |
+| SMB-030 | Speedrun timer | 2026-02-25 | F1 toggle, splits, ghost replay, PB localStorage |
+| SMB-031 | Gamepad support | 2026-02-25 | Gamepad API, Xbox/PS, analog stick, toast |
+| SMB-032 | Save states | 2026-02-25 | F5/F8, 3 slots, full state serialization |
+| SMB-033 | Sound controls | 2026-02-25 | M/+/-, speaker overlay, localStorage |
+| SMB-034 | CRT shader effect | 2026-02-25 | F2, scanlines, distortion, bloom, vignette |
+| SMB-035 | Responsive mobile UX | 2026-02-25 | Touch D-pad, CSS scaling, portrait warning |
+| SMB-041 | Achievement system | 2026-02-25 | 10 trophies, toast, Tab viewer, localStorage |
 
 ## Backlog
 
