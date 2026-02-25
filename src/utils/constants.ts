@@ -134,6 +134,7 @@ export const enum GameState {
   GAME_OVER,
   WIN,
   LEVEL_INTRO,
+  EDITOR,
 }
 
 // Stomp combo escalation (NES-accurate)

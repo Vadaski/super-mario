@@ -28,6 +28,8 @@ import { CRTShader } from './engine/crt-shader.js';
 import { SaveStateManager, type SaveStateData } from './engine/save-states.js';
 import { AchievementManager } from './engine/achievements.js';
 import { TouchControls } from './input/touch-controls.js';
+import { AccessibilityManager } from './engine/accessibility.js';
+import { LevelEditor } from './engine/level-editor.js';
 
 export class Game {
   private gc: GameCanvas;
@@ -70,6 +72,8 @@ export class Game {
   private volumeControl = new VolumeControl();
   private crtShader = new CRTShader();
   private touchControls: TouchControls;
+  private accessibility = new AccessibilityManager();
+  private editor: LevelEditor | null = null;
 
   constructor() {
     this.gc = new GameCanvas();
@@ -87,6 +91,7 @@ export class Game {
 
   async init(): Promise<void> {
     await initSprites();
+    this.checkLevelImport();
     this.startLoop();
   }
 
@@ -113,6 +118,19 @@ export class Game {
       }
     }
 
+    // Accessibility key handlers (F3/F4/F6/F7, S on title)
+    this.accessibility.handleKeys(
+      (code: string) => input.justPressed(code),
+      this.state,
+      GameState.TITLE,
+    );
+
+    // If remap overlay or settings menu is open, consume input
+    if (this.accessibility.isRemapOpen || this.accessibility.isSettingsOpen) {
+      input.update();
+      return;
+    }
+
     this.achievements.update();
     if (input.justPressed('Tab')) this.achievements.toggleViewer();
     if (this.achievements.isViewerOpen) { input.update(); return; }
@@ -130,6 +148,9 @@ export class Game {
     }
     if (this.paused) { input.update(); return; }
 
+    // Slow-motion: skip every other update frame
+    if (this.accessibility.shouldSkipUpdate()) { input.update(); return; }
+
     // Save/load state keys
     if (this.state === GameState.PLAYING) {
       if (input.justPressed('F5')) {
@@ -143,6 +164,12 @@ export class Game {
     this.stateTimer++;
     switch (this.state) {
       case GameState.TITLE:
+        if (input.justPressed('F10')) {
+          this.editor = new LevelEditor(this.gc.canvas, this.gc.getScale());
+          this.state = GameState.EDITOR;
+          this.stateTimer = 0;
+          break;
+        }
         if (input.startPressed) {
           this.initAudio();
           this.currentLevelId = '1-1';
@@ -188,6 +215,9 @@ export class Game {
         break;
       case GameState.WIN:
         this.updateWin();
+        break;
+      case GameState.EDITOR:
+        this.updateEditor();
         break;
     }
     input.update();
@@ -664,6 +694,12 @@ export class Game {
       case GameState.GAME_OVER:
         drawGameOver(this.ctx);
         break;
+      case GameState.EDITOR:
+        if (this.editor && !this.editor.testPlaying) {
+          this.editor.render(this.ctx);
+          break;
+        }
+        // fall through to default for test-play rendering
       default: {
         const data = this.levelConfig.data;
         this.renderer.renderGame(
@@ -690,6 +726,8 @@ export class Game {
           this.ctx.fillText('IN ANOTHER CASTLE!', this.camera.screenX(94 * TILE + 24), this.camera.screenY(8 * TILE + 12));
           this.ctx.textAlign = 'left';
         }
+        // High-contrast outlines for Mario and entities
+        this.accessibility.drawHighContrastOutlines(this.ctx, this.camera.x, this.entities, this.mario);
         drawHUD(this.ctx, sprites, this.mario.score, this.mario.coins, this.currentLevelId, this.timer, this.mario.lives);
         this.speedrun.renderGhost(this.ctx, this.camera.x);
         this.speedrun.render(this.ctx);
@@ -701,7 +739,91 @@ export class Game {
     if (this.paused) this.drawPauseOverlay();
     this.achievements.render(this.ctx);
     this.volumeControl.renderOverlay(this.ctx);
+
+    // Accessibility indicators and overlays
+    this.accessibility.renderSlowIndicator(this.ctx);
+    this.accessibility.renderColorblindIndicator(this.ctx);
+    this.accessibility.renderRemapOverlay(this.ctx, (code: string) => input.justPressed(code));
+    this.accessibility.renderSettingsMenu(this.ctx, (code: string) => input.justPressed(code));
+
     this.crtShader.apply(this.ctx, this.gc.canvas);
+  }
+
+  private updateEditor(): void {
+    if (!this.editor) return;
+    if (this.editor.testPlaying) {
+      // Escape returns to editor
+      if (input.justPressed('Escape')) {
+        this.editor.testPlaying = false;
+        audio.stopMusic();
+        return;
+      }
+      this.updatePlaying();
+      return;
+    }
+    // Editor mode key handling
+    if (input.justPressed('Escape')) {
+      // Exit editor back to title
+      this.editor.destroy();
+      this.editor = null;
+      this.state = GameState.TITLE;
+      this.stateTimer = 0;
+      return;
+    }
+    if (input.justPressed('ArrowLeft')) this.editor.handleScroll(-3);
+    if (input.justPressed('ArrowRight')) this.editor.handleScroll(3);
+    if (input.justPressed('Enter')) {
+      // Test-play
+      this.initAudio();
+      const built = this.editor.buildLevelData();
+      this.levelConfig = {
+        id: 'editor',
+        data: built.data,
+        contents: built.contents,
+        bgColor: '#5C94FC',
+        music: 'overworld',
+        nextLevel: null,
+      };
+      this.level = new Level(built.data, built.contents);
+      this.camera.reset(built.data.width);
+      this.mario.reset(built.data.startX, built.data.startY);
+      this.mario.lives = 3;
+      this.mario.score = 0;
+      this.mario.coins = 0;
+      this.entities = [];
+      this.timer = LEVEL_TIME;
+      this.timerFrame = 0;
+      this.fireballCooldown = 0;
+      this.brickHits.clear();
+      for (const s of built.data.entities) {
+        if (s.type === 'goomba') this.entities.push(new Goomba(s.x, s.y));
+        else if (s.type === 'koopa') this.entities.push(new Koopa(s.x, s.y));
+        else if (s.type === 'piranha') this.entities.push(new Piranha(s.x, s.y));
+      }
+      this.editor.testPlaying = true;
+      audio.playOverworldTheme();
+      return;
+    }
+    if (input.justPressed('KeyE')) {
+      // Export
+      const encoded = this.editor.exportBase64();
+      const url = new URL(window.location.href);
+      url.searchParams.set('level', encoded);
+      window.history.replaceState(null, '', url.toString());
+      navigator.clipboard.writeText(url.toString()).catch(() => { /* ignore */ });
+    }
+  }
+
+  private checkLevelImport(): void {
+    const params = new URLSearchParams(window.location.search);
+    const levelParam = params.get('level');
+    if (!levelParam) return;
+    const imported = LevelEditor.importBase64(levelParam);
+    if (!imported) return;
+    imported.attach(this.gc.canvas, this.gc.getScale());
+    this.editor = imported;
+    this.state = GameState.EDITOR;
+    this.stateTimer = 0;
   }
 
   private drawPauseOverlay(): void {
