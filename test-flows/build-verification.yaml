@@ -1,0 +1,24 @@
+name: "Build Verification"
+preconditions:
+  - "TypeScript compiler available"
+  - "Vite installed"
+flows:
+  - name: "TypeScript type check passes"
+    session: new
+    turns:
+      - send: "npx tsc --noEmit"
+        assert:
+          must:
+            - status_code: 0
+          should:
+            - response_not_contains: ["error TS"]
+
+  - name: "Vite build succeeds"
+    session: new
+    turns:
+      - send: "npx vite build"
+        assert:
+          must:
+            - status_code: 0
+          should:
+            - response_not_contains: ["ERROR", "error"]
